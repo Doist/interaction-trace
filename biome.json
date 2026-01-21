@@ -6,7 +6,7 @@
         "useIgnoreFile": true
     },
     "files": {
-        "includes": ["**", "!node_modules", "!dist", "!package.json", "!package-lock.json"]
+        "includes": ["**", "!node_modules", "!dist", "!package-lock.json"]
     },
     "assist": { "actions": { "source": { "organizeImports": "on" } } },
     "linter": {
