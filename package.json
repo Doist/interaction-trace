@@ -1,0 +1,68 @@
+{
+    "name": "@doist/interaction-trace",
+    "version": "0.0.0",
+    "description": "A performance monitoring library for tracking the time from user interactions to next paint (INP) and last long-animation frame (LoAF), with declarative trace signing and third-party reporting.",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        },
+        "./react": {
+            "types": "./dist/react/index.d.mts",
+            "import": "./dist/react/index.mjs"
+        }
+    },
+    "sideEffects": false,
+    "scripts": {
+        "build": "rollup -c",
+        "check": "run-p check:* -c -l",
+        "check:types": "tsc --noEmit",
+        "check:biome": "biome check",
+        "fix": "run-p fix:* -c -l",
+        "fix:biome": "biome check --write",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prepare": "husky"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Doist/interaction-trace.git"
+    },
+    "keywords": [
+        "performance",
+        "interaction",
+        "inp",
+        "loaf",
+        "monitoring"
+    ],
+    "author": "Doist Developers <dev@doist.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Doist/interaction-trace/issues"
+    },
+    "homepage": "https://github.com/Doist/interaction-trace#readme",
+    "engines": {
+        "node": ">=22"
+    },
+    "files": [
+        "dist/",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
+    ],
+    "peerDependencies": {
+        "react": ">=18.0.0"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        }
+    },
+    "lint-staged": {
+        "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched"
+    },
+    "devDependencies": {
+        "npm-run-all2": "8.0.4"
+    }
+}
