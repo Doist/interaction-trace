@@ -19,7 +19,7 @@ npm install @doist/interaction-trace
 ```typescript
 import { initInteractionTraceMonitor } from '@doist/interaction-trace'
 
-const cleanup = initInteractionTraceMonitor<MyTraces>({
+const cleanup = initInteractionTraceMonitor({
     reporter: (report) => {
         // Send to your analytics service
         console.log('Trace report:', report)
@@ -104,7 +104,7 @@ interface TraceReport {
 |---------|---------|----------|
 | Long Animation Frames (LoAF) | Chrome 123+ | Graceful no-op |
 | Interaction to Next Paint (INP) | Chrome 96+, Edge 96+ | `inp` field undefined |
-| `crypto.randomUUID()` | All modern browsers | Required |
+| `crypto.randomUUID()` | All modern browsers (Secure Context) | Required |
 | `PerformanceObserver` | All modern browsers | Required |
 
 **SSR/Node.js:** All browser APIs are safely guarded. Functions return no-ops when APIs are unavailable.
