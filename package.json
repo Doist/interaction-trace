@@ -63,6 +63,9 @@
         "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched"
     },
     "devDependencies": {
-        "npm-run-all2": "8.0.4"
+        "@rollup/plugin-node-resolve": "16.0.3",
+        "@rollup/plugin-typescript": "12.3.0",
+        "npm-run-all2": "8.0.4",
+        "rollup": "4.55.2"
     }
 }
