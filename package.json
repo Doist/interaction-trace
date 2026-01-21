@@ -63,6 +63,7 @@
         "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched"
     },
     "devDependencies": {
+        "@biomejs/biome": "2.3.11",
         "@doist/tsconfig": "2.0.1",
         "@rollup/plugin-node-resolve": "16.0.3",
         "@rollup/plugin-typescript": "12.3.0",
