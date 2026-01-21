@@ -5,5 +5,6 @@ export default defineConfig({
         environment: 'happy-dom',
         include: ['src/**/*.test.{ts,mts,tsx}'],
         watchExclude: ['node_modules', 'dist'],
+        passWithNoTests: true,
     },
 })
