@@ -1,0 +1,24 @@
+name: Check pull request health
+
+on: pull_request
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v5
+
+            - name: Prepare Node.js environment
+              uses: actions/setup-node@v6
+              with:
+                  cache: npm
+                  node-version-file: .node-version
+
+            - name: Install project npm dependencies
+              run: npm ci
+
+            - run: npm run check
+            - run: npm run test
+            - run: npm run build

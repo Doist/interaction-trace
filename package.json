@@ -1,0 +1,81 @@
+{
+    "name": "@doist/interaction-trace",
+    "version": "0.0.0",
+    "description": "A performance monitoring library for tracking the time from user interactions to next paint (INP) and last long-animation frame (LoAF), with declarative trace signing and third-party reporting.",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        },
+        "./react": {
+            "types": "./dist/react/index.d.mts",
+            "import": "./dist/react/index.mjs"
+        }
+    },
+    "sideEffects": false,
+    "scripts": {
+        "build": "rollup -c",
+        "check": "run-p check:* -c -l",
+        "check:types": "tsc --noEmit",
+        "check:biome": "biome check",
+        "fix": "run-p fix:* -c -l",
+        "fix:biome": "biome check --write",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prepare": "husky"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Doist/interaction-trace.git"
+    },
+    "keywords": [
+        "performance",
+        "interaction",
+        "inp",
+        "loaf",
+        "monitoring"
+    ],
+    "author": "Doist Developers <dev@doist.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Doist/interaction-trace/issues"
+    },
+    "homepage": "https://github.com/Doist/interaction-trace#readme",
+    "engines": {
+        "node": "^22.22.0 || ^24.13.0"
+    },
+    "files": [
+        "dist/",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
+    ],
+    "peerDependencies": {
+        "react": "^18.0.0 || ^19.0.0"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        }
+    },
+    "lint-staged": {
+        "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.3.11",
+        "@doist/tsconfig": "2.0.1",
+        "@rollup/plugin-node-resolve": "16.0.3",
+        "@rollup/plugin-typescript": "12.3.0",
+        "@types/node": "25.0.9",
+        "@types/react": "19.2.9",
+        "happy-dom": "20.3.4",
+        "husky": "9.1.7",
+        "lint-staged": "16.2.7",
+        "npm-run-all2": "8.0.4",
+        "rollup": "4.55.2",
+        "tslib": "2.8.1",
+        "typescript": "5.9.3",
+        "vitest": "4.0.17"
+    }
+}

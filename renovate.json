@@ -1,6 +1,10 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+    "extends": ["github>doist/renovate-config:frontend-base"],
+    "schedule": ["before 7am every weekday"],
+    "updateNotScheduled": false,
+    "reviewers": ["team:frontend-product"],
+    "prBodyNotes": [
+        "## Reference\n",
+        " - See [Keeping dependencies up-to-date](https://handbook.doist.com/doc/keeping-dependencies-up-to-date-Qf28E929N5) for reviewing guidelines."
+    ]
 }
