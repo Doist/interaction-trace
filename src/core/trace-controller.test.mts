@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { resetFeatureDetection } from './feature-detection.mts'
+import { resetFeatureDetection } from './feature-detection.mjs'
 import {
     initInteractionTraceMonitor,
     isMonitorActive,
     resetController,
     setContextGetter,
     signInteractionTrace,
-} from './trace-controller.mts'
+} from './trace-controller.mjs'
 
 describe('trace-controller', () => {
     let mockObservers: Array<{

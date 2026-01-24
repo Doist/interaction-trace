@@ -1,6 +1,6 @@
-import type { InteractionTraceConfig, TraceReporter } from '../types.mts'
-import { isBrowserSupported } from './feature-detection.mts'
-import { InteractionTrace } from './interaction-trace.mts'
+import type { InteractionTraceConfig, TraceReporter } from '../types.mjs'
+import { isBrowserSupported } from './feature-detection.mjs'
+import { InteractionTrace } from './interaction-trace.mjs'
 
 const DEFAULT_PERSIST_KEY = 'interaction-trace-enrolled'
 const DEFAULT_SAMPLE_RATE = 100

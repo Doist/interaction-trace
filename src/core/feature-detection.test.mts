@@ -4,7 +4,7 @@ import {
     isInpSupported,
     isLoafSupported,
     resetFeatureDetection,
-} from './feature-detection.mts'
+} from './feature-detection.mjs'
 
 describe('feature-detection', () => {
     beforeEach(() => {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDeviceInfo } from './device-info.mts'
+import { getDeviceInfo } from './device-info.mjs'
 
 describe('getDeviceInfo', () => {
     const originalNavigator = globalThis.navigator

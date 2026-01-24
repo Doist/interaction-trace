@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getCpuCoresBucket, getMemoryBucket } from './size-buckets.mts'
+import { getCpuCoresBucket, getMemoryBucket } from './size-buckets.mjs'
 
 describe('getMemoryBucket', () => {
     const originalNavigator = globalThis.navigator

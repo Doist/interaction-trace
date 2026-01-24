@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TraceReport } from '../types.mts'
-import { InteractionTrace } from './interaction-trace.mts'
+import type { TraceReport } from '../types.mjs'
+import { InteractionTrace } from './interaction-trace.mjs'
 
 describe('InteractionTrace', () => {
     let mockObservers: Array<{
