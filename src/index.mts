@@ -1,3 +1,5 @@
+export { initInteractionTraceMonitor, signInteractionTrace } from './core/trace-controller.mts'
+
 export type {
     CpuCoresBucket,
     DeviceInfo,

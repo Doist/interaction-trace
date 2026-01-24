@@ -1,0 +1,200 @@
+import type { TraceReport, TraceReporter } from '../types.mts'
+import { getDeviceInfo } from './device-info.mts'
+
+const MEASURE_NAME = 'interaction-trace-measure'
+const MARK_START_NAME = `${MEASURE_NAME}-start`
+const MARK_END_NAME = `${MEASURE_NAME}-end`
+
+/** Timeout after last LoAF frame before completing the trace */
+const LONG_FRAME_TIMEOUT = 500
+/** Maximum time to wait for LoAF frames */
+const MAX_WAIT_TIMEOUT = 15000
+/**
+ * Borrowed from the Web Vitals library. 40ms is the threshold for tracking events spanning 2.5 or more frames
+ * @see https://github.com/GoogleChrome/web-vitals/blob/1b872cf5f2159e8ace0e98d55d8eb54fb09adfbe/src/onINP.ts#L120
+ */
+const INP_THRESHOLD = 40
+
+/**
+ * InteractionTrace tracks the performance of user interactions by observing
+ * both long animation frames (LoAF) and interaction to next paint (INP).
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Long_animation_frame_timing
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEventTiming
+ */
+export class InteractionTrace<TName extends string = string, TDetails = Record<string, unknown>> {
+    readonly id: string
+
+    private onComplete: TraceReporter<TName, TDetails>
+    private processed = false
+    private disposed = false
+
+    private name: TName | undefined
+    private details: TDetails | undefined
+    private context: Record<string, unknown> = {}
+
+    private readonly markStartName: string
+    private readonly markEndName: string
+    private readonly measureName: string
+
+    private loafObserver: PerformanceObserver | undefined
+    private inpObserver: PerformanceObserver | undefined
+    private frameTimeout: ReturnType<typeof setTimeout> | undefined
+    private maxTimeout: ReturnType<typeof setTimeout> | undefined
+
+    private inpStart: number | undefined
+    private inpDuration: number | undefined
+
+    constructor(onComplete: TraceReporter<TName, TDetails>) {
+        this.id = crypto.randomUUID()
+        this.onComplete = onComplete
+
+        this.markStartName = `${MARK_START_NAME}-${this.id}`
+        this.markEndName = `${MARK_END_NAME}-${this.id}`
+        this.measureName = `${MEASURE_NAME}-${this.id}`
+
+        this.observeLongAnimationFrames()
+        this.observeNextPaint()
+    }
+
+    /**
+     * Signs the trace with a name, details, and context.
+     * Marks the start time for duration measurement.
+     */
+    sign(name: TName, details: TDetails, context: Record<string, unknown>): void {
+        if (this.processed || this.disposed) {
+            return
+        }
+
+        this.name = name
+        this.details = details
+        this.context = context
+    }
+
+    /**
+     * Disposes of the trace, cleaning up observers and timers.
+     * Does not call onComplete.
+     */
+    dispose(): void {
+        if (this.disposed) {
+            return
+        }
+
+        this.disposed = true
+        this.cleanup()
+    }
+
+    private observeLongAnimationFrames(): void {
+        performance.mark(this.markStartName)
+
+        this.loafObserver = new PerformanceObserver(() => {
+            if (this.frameTimeout) {
+                clearTimeout(this.frameTimeout)
+            }
+            performance.mark(this.markEndName)
+
+            // Trace ends if no long frame happens within LONG_FRAME_TIMEOUT
+            this.frameTimeout = setTimeout(() => {
+                this.process()
+            }, LONG_FRAME_TIMEOUT)
+        })
+
+        this.loafObserver.observe({ type: 'long-animation-frame' })
+
+        // Will process the trace if no long frame happens within MAX_WAIT_TIMEOUT
+        this.maxTimeout = setTimeout(() => {
+            this.process()
+        }, MAX_WAIT_TIMEOUT)
+    }
+
+    private observeNextPaint(): void {
+        this.inpObserver = new PerformanceObserver((list) => {
+            // keyup events are also available, but just tracking pointerup to be
+            // consistent with long frames tracking for now.
+            const pointerUpEntry = list.getEntries().find((entry) => entry.name === 'pointerup')
+
+            if (pointerUpEntry) {
+                this.inpStart = pointerUpEntry.startTime
+                this.inpDuration = pointerUpEntry.duration
+            }
+        })
+
+        this.inpObserver.observe({
+            type: 'event',
+            // @ts-expect-error PerformanceObserver is resolved to lib.dom types and may be missing the durationThreshold option
+            durationThreshold: INP_THRESHOLD,
+        })
+    }
+
+    private process(): void {
+        if (this.processed || this.disposed) {
+            return
+        }
+
+        this.processed = true
+        this.cleanup()
+
+        // Long frames measurement
+        let duration: number | undefined
+        const measureName = this.name ? `${MEASURE_NAME}-${this.name}` : this.measureName
+
+        if (performance.getEntriesByName(this.markEndName).length > 0) {
+            const measurement = performance.measure(
+                measureName,
+                this.markStartName,
+                this.markEndName,
+            )
+            duration = measurement.duration ? Math.round(measurement.duration) : undefined
+        }
+
+        performance.clearMarks(this.markStartName)
+        performance.clearMarks(this.markEndName)
+        performance.clearMeasures(measureName)
+
+        // INP measurement
+        let inp: number | undefined
+        if (this.inpStart !== undefined && this.inpDuration !== undefined) {
+            const inpMeasureName = this.name
+                ? `${MEASURE_NAME}-inp-${this.name}`
+                : `${this.measureName}-inp`
+
+            const measurement = performance.measure(inpMeasureName, {
+                start: this.inpStart,
+                duration: this.inpDuration,
+            })
+
+            inp = measurement?.duration ? Math.round(measurement.duration) : undefined
+            performance.clearMeasures(inpMeasureName)
+        }
+
+        // Only report if we have a name and duration
+        if (this.name !== undefined && duration !== undefined) {
+            const report: TraceReport<TName, TDetails> = {
+                id: this.id,
+                name: this.name,
+                duration,
+                inp,
+                details: this.details as TDetails,
+                context: this.context,
+                device: getDeviceInfo(),
+            }
+
+            this.onComplete(report)
+        }
+    }
+
+    private cleanup(): void {
+        this.loafObserver?.disconnect()
+        this.inpObserver?.disconnect()
+
+        if (this.frameTimeout) {
+            clearTimeout(this.frameTimeout)
+            this.frameTimeout = undefined
+        }
+
+        if (this.maxTimeout) {
+            clearTimeout(this.maxTimeout)
+            this.maxTimeout = undefined
+        }
+    }
+}
