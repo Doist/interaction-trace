@@ -4,7 +4,6 @@ import {
     initInteractionTraceMonitor,
     isMonitorActive,
     resetController,
-    setContextGetter,
     signInteractionTrace,
 } from './trace-controller.mjs'
 
@@ -235,8 +234,7 @@ describe('trace-controller', () => {
 
             expect(reporter).toHaveBeenCalledOnce()
             expect(reporter.mock.calls[0]?.[0]).toMatchObject({
-                name: 'test-interaction',
-                details: { key: 'value' },
+                details: { name: 'test-interaction', key: 'value' },
             })
         })
 
@@ -249,31 +247,6 @@ describe('trace-controller', () => {
 
             const loafObservers = mockObservers.filter((o) => o.type === 'long-animation-frame')
             expect(loafObservers.length).toBe(2)
-        })
-
-        it('uses context from contextGetter', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            setContextGetter(() => ({ page: 'dashboard', userId: '123' }))
-            signInteractionTrace('test-interaction')
-
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
-
-            vi.advanceTimersByTime(501)
-
-            expect(reporter.mock.calls[0]?.[0]?.context).toEqual({
-                page: 'dashboard',
-                userId: '123',
-            })
         })
     })
 

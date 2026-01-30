@@ -1,4 +1,4 @@
-import type { TraceReport, TraceReporter } from '../types.mjs'
+import type { TraceDetails, TraceReport, TraceReporter } from '../types.mjs'
 import { getDeviceInfo } from './device-info.mjs'
 
 const MEASURE_NAME = 'interaction-trace-measure'
@@ -22,16 +22,14 @@ const INP_THRESHOLD = 40
  * @see https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Long_animation_frame_timing
  * @see https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEventTiming
  */
-export class InteractionTrace<TName extends string = string, TDetails = Record<string, unknown>> {
+export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
     readonly id: string
 
-    private onComplete: TraceReporter<TName, TDetails>
+    private onComplete: TraceReporter<TDetails>
     private processed = false
     private disposed = false
 
-    private name: TName | undefined
     private details: TDetails | undefined
-    private context: Record<string, unknown> = {}
 
     private readonly markStartName: string
     private readonly markEndName: string
@@ -45,7 +43,7 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
     private inpStart: number | undefined
     private inpDuration: number | undefined
 
-    constructor(onComplete: TraceReporter<TName, TDetails>) {
+    constructor(onComplete: TraceReporter<TDetails>) {
         this.id = crypto.randomUUID()
         this.onComplete = onComplete
 
@@ -58,17 +56,15 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
     }
 
     /**
-     * Signs the trace with a name, details, and context.
+     * Signs the trace with details (including name).
      * Marks the start time for duration measurement.
      */
-    sign(name: TName, details: TDetails, context: Record<string, unknown>): void {
+    sign(details: TDetails): void {
         if (this.processed || this.disposed) {
             return
         }
 
-        this.name = name
         this.details = details
-        this.context = context
     }
 
     /**
@@ -133,7 +129,8 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
         this.cleanup()
 
         let duration: number | undefined
-        const measureName = this.name ? `${MEASURE_NAME}-${this.name}` : this.measureName
+        const traceName = this.details?.name
+        const measureName = traceName ? `${MEASURE_NAME}-${traceName}` : this.measureName
 
         if (performance.getEntriesByName(this.markEndName).length > 0) {
             const measurement = performance.measure(
@@ -150,8 +147,8 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
 
         let inp: number | undefined
         if (this.inpStart !== undefined && this.inpDuration !== undefined) {
-            const inpMeasureName = this.name
-                ? `${MEASURE_NAME}-inp-${this.name}`
+            const inpMeasureName = traceName
+                ? `${MEASURE_NAME}-inp-${traceName}`
                 : `${this.measureName}-inp`
 
             const measurement = performance.measure(inpMeasureName, {
@@ -163,14 +160,12 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
             performance.clearMeasures(inpMeasureName)
         }
 
-        if (this.name !== undefined && duration !== undefined) {
-            const report: TraceReport<TName, TDetails> = {
+        if (this.details !== undefined && duration !== undefined) {
+            const report: TraceReport<TDetails> = {
                 id: this.id,
-                name: this.name,
                 duration,
                 inp,
-                details: this.details as TDetails,
-                context: this.context,
+                details: this.details,
                 device: getDeviceInfo(),
             }
 

@@ -6,6 +6,7 @@ export type {
     EnrollmentConfig,
     InteractionTraceConfig,
     MemoryBucket,
+    TraceDetails,
     TraceReport,
     TraceReporter,
 } from './types.mjs'

@@ -24,21 +24,24 @@ export type DeviceInfo = {
 }
 
 /**
+ * Base type for trace details. Requires a name field.
+ */
+export type TraceDetails<TName extends string = string> = {
+    readonly name: TName
+} & Record<string, unknown>
+
+/**
  * Report generated when an interaction trace completes.
  */
-export type TraceReport<TName extends string = string, TDetails = Record<string, unknown>> = {
+export type TraceReport<TDetails extends TraceDetails = TraceDetails> = {
     /** Unique trace ID (crypto.randomUUID()) */
     readonly id: string
-    /** Trace name from signInteractionTrace() */
-    readonly name: TName
     /** Total duration from start mark to last LoAF end mark (ms, rounded) */
     readonly duration: number
     /** INP value if captured (ms, rounded), undefined if no pointerup event */
     readonly inp: number | undefined
-    /** Details from signInteractionTrace() call */
+    /** Details from signInteractionTrace() call, includes name */
     readonly details: TDetails
-    /** Merged context from InteractionTraceProvider */
-    readonly context: Record<string, unknown>
     /** Device capability info */
     readonly device: DeviceInfo
 }
@@ -46,8 +49,8 @@ export type TraceReport<TName extends string = string, TDetails = Record<string,
 /**
  * Function called when a trace completes to report metrics.
  */
-export type TraceReporter<TName extends string = string, TDetails = Record<string, unknown>> = (
-    report: TraceReport<TName, TDetails>,
+export type TraceReporter<TDetails extends TraceDetails = TraceDetails> = (
+    report: TraceReport<TDetails>,
 ) => void | Promise<void>
 
 /**
@@ -65,12 +68,9 @@ export type EnrollmentConfig = {
 /**
  * Configuration for initializing the interaction trace monitor.
  */
-export type InteractionTraceConfig<
-    TName extends string = string,
-    TDetails = Record<string, unknown>,
-> = {
+export type InteractionTraceConfig<TDetails extends TraceDetails = TraceDetails> = {
     /** Reporter function called when a trace completes */
-    reporter: TraceReporter<TName, TDetails>
+    reporter: TraceReporter<TDetails>
     /** Enrollment/sampling configuration */
     enrollment?: EnrollmentConfig
     /** Optional AbortSignal - when aborted, automatically calls cleanup */

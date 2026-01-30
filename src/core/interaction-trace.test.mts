@@ -111,7 +111,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.sign('test-interaction', { key: 'value' }, { page: 'home' })
+        trace.sign({ name: 'test-interaction', key: 'value' })
 
         // Trigger a LoAF frame
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
@@ -130,9 +130,7 @@ describe('InteractionTrace', () => {
         expect(onComplete).toHaveBeenCalledOnce()
         const report = onComplete.mock.calls[0]?.[0] as TraceReport
         expect(report.id).toBe('test-uuid-1234')
-        expect(report.name).toBe('test-interaction')
-        expect(report.details).toEqual({ key: 'value' })
-        expect(report.context).toEqual({ page: 'home' })
+        expect(report.details).toEqual({ name: 'test-interaction', key: 'value' })
         expect(report.duration).toBe(100)
         expect(report.device).toEqual({
             memoryGB: '8-plus',
@@ -144,7 +142,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.sign('test-interaction', {}, {})
+        trace.sign({ name: 'test-interaction' })
 
         // Trigger INP observation
         const inpObserver = mockObservers.find((o) => o.type === 'event')
@@ -205,7 +203,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.sign('test-interaction', {}, {})
+        trace.sign({ name: 'test-interaction' })
 
         // Fast forward 15 seconds without any LoAF frames
         vi.advanceTimersByTime(15001)
@@ -218,7 +216,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.sign('test-interaction', {}, {})
+        trace.sign({ name: 'test-interaction' })
 
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
 
@@ -255,7 +253,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.sign('test-interaction', {}, {})
+        trace.sign({ name: 'test-interaction' })
         trace.dispose()
 
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
@@ -278,7 +276,7 @@ describe('InteractionTrace', () => {
         const trace = new InteractionTrace(onComplete)
 
         trace.dispose()
-        trace.sign('test-interaction', {}, {})
+        trace.sign({ name: 'test-interaction' })
 
         vi.advanceTimersByTime(15001)
 

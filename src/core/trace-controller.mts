@@ -1,4 +1,4 @@
-import type { InteractionTraceConfig, TraceReporter } from '../types.mjs'
+import type { InteractionTraceConfig, TraceDetails, TraceReporter } from '../types.mjs'
 import { isBrowserSupported } from './feature-detection.mjs'
 import { InteractionTrace } from './interaction-trace.mjs'
 
@@ -7,8 +7,7 @@ const DEFAULT_SAMPLE_RATE = 100
 
 let initialized = false
 let enrolled = false
-let reporter: TraceReporter<string, unknown> | undefined
-let contextGetter: (() => Record<string, unknown>) | undefined
+let reporter: TraceReporter | undefined
 
 /** Active traces that need cleanup on dispose */
 const activeTraces = new Set<{ dispose(): void }>()
@@ -19,10 +18,9 @@ const activeTraces = new Set<{ dispose(): void }>()
  * @param config - Configuration including reporter and enrollment options
  * @returns Cleanup function to disable monitoring
  */
-export function initInteractionTraceMonitor<
-    TName extends string = string,
-    TDetails = Record<string, unknown>,
->(config: InteractionTraceConfig<TName, TDetails>): () => void {
+export function initInteractionTraceMonitor<TDetails extends TraceDetails = TraceDetails>(
+    config: InteractionTraceConfig<TDetails>,
+): () => void {
     if (config.abortSignal?.aborted) {
         return () => {}
     }
@@ -50,7 +48,7 @@ export function initInteractionTraceMonitor<
     }
 
     initialized = true
-    reporter = config.reporter as TraceReporter<string, unknown>
+    reporter = config.reporter as TraceReporter
 
     let cleanedUp = false
 
@@ -65,7 +63,6 @@ export function initInteractionTraceMonitor<
         initialized = false
         enrolled = false
         reporter = undefined
-        contextGetter = undefined
 
         for (const trace of activeTraces) {
             trace.dispose()
@@ -85,35 +82,26 @@ export function initInteractionTraceMonitor<
  * No-op if not initialized or not enrolled.
  *
  * @param name - The trace name
- * @param details - Optional trace details
+ * @param details - Optional additional trace details
  */
 export function signInteractionTrace<
     TName extends string = string,
-    TDetails = Record<string, unknown>,
->(name: TName, details?: TDetails): void {
+    TDetails extends TraceDetails<TName> = TraceDetails<TName>,
+>(name: TName, details?: Omit<TDetails, 'name'>): void {
     if (!initialized || !enrolled || !reporter) {
         return
     }
 
     const currentReporter = reporter
-    const trace = new InteractionTrace<TName, TDetails>((report) => {
+    const trace = new InteractionTrace<TDetails>((report) => {
         activeTraces.delete(trace)
         currentReporter(report)
     })
 
     activeTraces.add(trace)
 
-    const context = contextGetter?.() ?? {}
-    trace.sign(name, (details ?? {}) as TDetails, context)
-}
-
-/**
- * Sets the context getter function.
- * Used by React provider to supply context values.
- * @internal
- */
-export function setContextGetter(getter: (() => Record<string, unknown>) | undefined): void {
-    contextGetter = getter
+    const mergedDetails = { name, ...details } as TDetails
+    trace.sign(mergedDetails)
 }
 
 function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean {
@@ -162,7 +150,6 @@ export function resetController(): void {
     initialized = false
     enrolled = false
     reporter = undefined
-    contextGetter = undefined
 
     for (const trace of activeTraces) {
         trace.dispose()
