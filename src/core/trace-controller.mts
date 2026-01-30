@@ -10,7 +10,7 @@ let enrolled = false
 let reporter: TraceReporter<string, unknown> | undefined
 let contextGetter: (() => Record<string, unknown>) | undefined
 
-// Store traces by their dispose function - we only need to call dispose() on cleanup
+/** Active traces that need cleanup on dispose */
 const activeTraces = new Set<{ dispose(): void }>()
 
 /**
@@ -23,6 +23,10 @@ export function initInteractionTraceMonitor<
     TName extends string = string,
     TDetails = Record<string, unknown>,
 >(config: InteractionTraceConfig<TName, TDetails>): () => void {
+    if (config.abortSignal?.aborted) {
+        return () => {}
+    }
+
     if (initialized) {
         if (process.env.NODE_ENV === 'development') {
             console.warn('[interaction-trace] Already initialized. Call cleanup function first.')
@@ -30,7 +34,6 @@ export function initInteractionTraceMonitor<
         return () => {}
     }
 
-    // Check browser support
     if (!isBrowserSupported()) {
         if (process.env.NODE_ENV === 'development') {
             console.warn(
@@ -40,7 +43,6 @@ export function initInteractionTraceMonitor<
         return () => {}
     }
 
-    // Check enrollment
     enrolled = checkEnrollment(config.enrollment)
 
     if (!enrolled) {
@@ -50,18 +52,30 @@ export function initInteractionTraceMonitor<
     initialized = true
     reporter = config.reporter as TraceReporter<string, unknown>
 
-    return () => {
+    let cleanedUp = false
+
+    function cleanup() {
+        if (cleanedUp) {
+            return
+        }
+        cleanedUp = true
+
+        config.abortSignal?.removeEventListener('abort', cleanup)
+
         initialized = false
         enrolled = false
         reporter = undefined
         contextGetter = undefined
 
-        // Dispose all active traces
         for (const trace of activeTraces) {
             trace.dispose()
         }
         activeTraces.clear()
     }
+
+    config.abortSignal?.addEventListener('abort', cleanup, { once: true })
+
+    return cleanup
 }
 
 /**
@@ -103,7 +117,6 @@ export function setContextGetter(getter: (() => Record<string, unknown>) | undef
 }
 
 function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean {
-    // Override takes precedence
     if (config?.isEnabled) {
         return config.isEnabled()
     }
@@ -111,7 +124,6 @@ function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean 
     const sampleRate = config?.sampleRate ?? DEFAULT_SAMPLE_RATE
     const persistKey = config?.persistKey ?? DEFAULT_PERSIST_KEY
 
-    // Check for existing enrollment state in sessionStorage
     if (typeof sessionStorage !== 'undefined') {
         const stored = sessionStorage.getItem(persistKey)
 
@@ -119,7 +131,6 @@ function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean 
             return stored === 'true'
         }
 
-        // Roll for enrollment
         const isEnrolled = Math.random() * 100 < sampleRate
 
         try {
@@ -131,7 +142,6 @@ function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean 
         return isEnrolled
     }
 
-    // No sessionStorage, roll without persistence
     return Math.random() * 100 < sampleRate
 }
 

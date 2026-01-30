@@ -73,4 +73,6 @@ export type InteractionTraceConfig<
     reporter: TraceReporter<TName, TDetails>
     /** Enrollment/sampling configuration */
     enrollment?: EnrollmentConfig
+    /** Optional AbortSignal - when aborted, automatically calls cleanup */
+    abortSignal?: AbortSignal
 }

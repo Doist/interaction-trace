@@ -93,7 +93,6 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
             }
             performance.mark(this.markEndName)
 
-            // Trace ends if no long frame happens within LONG_FRAME_TIMEOUT
             this.frameTimeout = setTimeout(() => {
                 this.process()
             }, LONG_FRAME_TIMEOUT)
@@ -101,7 +100,6 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
 
         this.loafObserver.observe({ type: 'long-animation-frame' })
 
-        // Will process the trace if no long frame happens within MAX_WAIT_TIMEOUT
         this.maxTimeout = setTimeout(() => {
             this.process()
         }, MAX_WAIT_TIMEOUT)
@@ -134,7 +132,6 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
         this.processed = true
         this.cleanup()
 
-        // Long frames measurement
         let duration: number | undefined
         const measureName = this.name ? `${MEASURE_NAME}-${this.name}` : this.measureName
 
@@ -151,7 +148,6 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
         performance.clearMarks(this.markEndName)
         performance.clearMeasures(measureName)
 
-        // INP measurement
         let inp: number | undefined
         if (this.inpStart !== undefined && this.inpDuration !== undefined) {
             const inpMeasureName = this.name
@@ -167,7 +163,6 @@ export class InteractionTrace<TName extends string = string, TDetails = Record<s
             performance.clearMeasures(inpMeasureName)
         }
 
-        // Only report if we have a name and duration
         if (this.name !== undefined && duration !== undefined) {
             const report: TraceReport<TName, TDetails> = {
                 id: this.id,

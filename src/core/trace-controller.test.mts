@@ -31,7 +31,6 @@ describe('trace-controller', () => {
             hardwareConcurrency: 10,
         })
 
-        // Mock PerformanceObserver
         vi.stubGlobal('PerformanceObserver', {
             supportedEntryTypes: ['long-animation-frame', 'event'],
         })
@@ -61,8 +60,8 @@ describe('trace-controller', () => {
             ),
         )
 
-        // Mock performance API
         vi.stubGlobal('performance', {
+            now: () => Date.now(),
             mark: (name: string) => {
                 performanceMarks.set(name, { startTime: Date.now() })
             },
@@ -74,7 +73,6 @@ describe('trace-controller', () => {
             clearMeasures: () => {},
         })
 
-        // Mock sessionStorage
         const storage = new Map<string, string>()
         vi.stubGlobal('sessionStorage', {
             getItem: (key: string) => storage.get(key) ?? null,
@@ -109,7 +107,7 @@ describe('trace-controller', () => {
             const cleanup = initInteractionTraceMonitor({ reporter })
 
             expect(isMonitorActive()).toBe(false)
-            cleanup() // should not throw
+            cleanup()
         })
 
         it('cleanup function resets state', () => {
@@ -134,7 +132,7 @@ describe('trace-controller', () => {
             expect(consoleWarnSpy).toHaveBeenCalledWith(
                 '[interaction-trace] Already initialized. Call cleanup function first.',
             )
-            cleanup2() // should not throw or change state
+            cleanup2()
             expect(isMonitorActive()).toBe(true)
 
             consoleWarnSpy.mockRestore()
@@ -205,7 +203,6 @@ describe('trace-controller', () => {
     describe('signInteractionTrace', () => {
         it('is no-op when not initialized', () => {
             signInteractionTrace('test')
-            // Should not throw
             expect(mockObservers).toHaveLength(0)
         })
 
@@ -215,7 +212,6 @@ describe('trace-controller', () => {
 
             signInteractionTrace('test-interaction')
 
-            // Should have created observers
             expect(mockObservers.length).toBeGreaterThan(0)
         })
 
@@ -225,7 +221,6 @@ describe('trace-controller', () => {
 
             signInteractionTrace('test-interaction', { key: 'value' })
 
-            // Trigger LoAF to complete the trace
             const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
             loafObserver?.callback(
                 {
@@ -252,7 +247,6 @@ describe('trace-controller', () => {
             signInteractionTrace('trace-1')
             signInteractionTrace('trace-2')
 
-            // Both should have their observers set up
             const loafObservers = mockObservers.filter((o) => o.type === 'long-animation-frame')
             expect(loafObservers.length).toBe(2)
         })
@@ -264,7 +258,6 @@ describe('trace-controller', () => {
             setContextGetter(() => ({ page: 'dashboard', userId: '123' }))
             signInteractionTrace('test-interaction')
 
-            // Complete the trace
             const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
             loafObserver?.callback(
                 {
@@ -293,9 +286,131 @@ describe('trace-controller', () => {
 
             cleanup()
 
-            // Trace should be disposed - advancing time should not trigger reporter
             vi.advanceTimersByTime(15001)
             expect(reporter).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('abort signal support', () => {
+        it('returns no-op cleanup when signal is already aborted', () => {
+            const controller = new AbortController()
+            controller.abort()
+
+            const reporter = vi.fn()
+            const cleanup = initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            expect(isMonitorActive()).toBe(false)
+            cleanup()
+        })
+
+        it('triggers cleanup when signal is aborted', () => {
+            const controller = new AbortController()
+            const reporter = vi.fn()
+
+            initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            expect(isMonitorActive()).toBe(true)
+
+            controller.abort()
+
+            expect(isMonitorActive()).toBe(false)
+        })
+
+        it('disposes active traces when signal is aborted', () => {
+            const controller = new AbortController()
+            const reporter = vi.fn()
+
+            initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            signInteractionTrace('test-interaction')
+
+            controller.abort()
+
+            vi.advanceTimersByTime(15001)
+            expect(reporter).not.toHaveBeenCalled()
+        })
+
+        it('cleanup only runs once when both manual cleanup and abort occur', () => {
+            const controller = new AbortController()
+            const reporter = vi.fn()
+
+            const cleanup = initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            cleanup()
+            controller.abort()
+
+            expect(isMonitorActive()).toBe(false)
+        })
+
+        it('removes abort listener after manual cleanup', () => {
+            const controller = new AbortController()
+            const removeEventListenerSpy = vi.spyOn(controller.signal, 'removeEventListener')
+
+            const reporter = vi.fn()
+            const cleanup = initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            cleanup()
+
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', expect.any(Function))
+        })
+
+        it('works normally without abort signal (backward compatibility)', () => {
+            const reporter = vi.fn()
+            const cleanup = initInteractionTraceMonitor({ reporter })
+
+            expect(isMonitorActive()).toBe(true)
+
+            cleanup()
+
+            expect(isMonitorActive()).toBe(false)
+        })
+
+        it('does not attach abort listener when already initialized', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            const controller = new AbortController()
+            const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener')
+
+            initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            expect(addEventListenerSpy).not.toHaveBeenCalled()
+        })
+
+        it('does not attach abort listener when browser not supported', () => {
+            vi.stubGlobal('PerformanceObserver', {
+                supportedEntryTypes: [],
+            })
+            resetFeatureDetection()
+
+            const controller = new AbortController()
+            const addEventListenerSpy = vi.spyOn(controller.signal, 'addEventListener')
+
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({
+                reporter,
+                abortSignal: controller.signal,
+            })
+
+            expect(addEventListenerSpy).not.toHaveBeenCalled()
         })
     })
 })
