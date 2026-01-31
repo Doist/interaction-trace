@@ -4,13 +4,37 @@ import { InteractionTrace } from './interaction-trace.mjs'
 
 const DEFAULT_PERSIST_KEY = 'interaction-trace-enrolled'
 const DEFAULT_SAMPLE_RATE = 100
+const CLEANUP_TIMER_MS = 1000
 
 let initialized = false
 let enrolled = false
 let reporter: TraceReporter | undefined
 
-/** Active traces that need cleanup on cancel */
-const activeTraces = new Set<{ cancel(): void }>()
+type Trace = Pick<InteractionTrace<TraceDetails>, 'cancel' | 'sign' | 'isProcessed' | 'isCancelled'>
+
+let traces: Trace[] = []
+let cleanupTimeoutId: ReturnType<typeof setTimeout> | undefined
+
+function handlePointerUp(): void {
+    if (!reporter) return
+
+    for (const trace of traces) {
+        trace.cancel()
+    }
+
+    const trace = new InteractionTrace<TraceDetails>((report) => {
+        reporter?.(report)
+    })
+    traces.push(trace)
+
+    if (cleanupTimeoutId !== undefined) {
+        clearTimeout(cleanupTimeoutId)
+    }
+    cleanupTimeoutId = setTimeout(() => {
+        traces = traces.filter((t) => !t.isProcessed && !t.isCancelled)
+        cleanupTimeoutId = undefined
+    }, CLEANUP_TIMER_MS)
+}
 
 /**
  * Initializes the interaction trace monitor.
@@ -50,6 +74,8 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
     initialized = true
     reporter = config.reporter as TraceReporter
 
+    document.addEventListener('pointerup', handlePointerUp)
+
     let cleanedUp = false
 
     function cleanup() {
@@ -60,14 +86,21 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
 
         config.abortSignal?.removeEventListener('abort', cleanup)
 
+        document.removeEventListener('pointerup', handlePointerUp)
+
+        if (cleanupTimeoutId !== undefined) {
+            clearTimeout(cleanupTimeoutId)
+            cleanupTimeoutId = undefined
+        }
+
+        for (const trace of traces) {
+            trace.cancel()
+        }
+        traces = []
+
         initialized = false
         enrolled = false
         reporter = undefined
-
-        for (const trace of activeTraces) {
-            trace.cancel()
-        }
-        activeTraces.clear()
     }
 
     config.abortSignal?.addEventListener('abort', cleanup, { once: true })
@@ -76,32 +109,29 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
 }
 
 /**
- * Signs an interaction trace with the given name and details.
- * Creates a new trace instance that will report when complete.
+ * Signs the most recent interaction trace with the given name and details.
+ * The trace must have been created by a pointerup event.
  *
- * No-op if not initialized or not enrolled.
+ * No-op if not initialized, not enrolled, or no pending trace exists.
  *
  * @param name - The trace name
  * @param details - Optional additional trace details
  */
-export function signInteractionTrace<
-    TName extends string = string,
-    TDetails extends TraceDetails<TName> = TraceDetails<TName>,
->(name: TName, details?: Omit<TDetails, 'name'>): void {
+export function signInteractionTrace<TDetails extends TraceDetails>(
+    name: TDetails['name'],
+    details?: Omit<TDetails, 'name'>,
+): void {
     if (!initialized || !enrolled || !reporter) {
         return
     }
 
-    const currentReporter = reporter
-    const trace = new InteractionTrace<TDetails>((report) => {
-        activeTraces.delete(trace)
-        currentReporter(report)
-    })
-
-    activeTraces.add(trace)
+    const lastTrace = traces.at(-1)
+    if (!lastTrace) {
+        return
+    }
 
     const mergedDetails = { name, ...details } as TDetails
-    trace.sign(mergedDetails)
+    lastTrace.sign(mergedDetails)
 }
 
 function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean {
@@ -147,12 +177,19 @@ export function isMonitorActive(): boolean {
  * @internal
  */
 export function resetController(): void {
+    document.removeEventListener('pointerup', handlePointerUp)
+
+    if (cleanupTimeoutId !== undefined) {
+        clearTimeout(cleanupTimeoutId)
+        cleanupTimeoutId = undefined
+    }
+
+    for (const trace of traces) {
+        trace.cancel()
+    }
+    traces = []
+
     initialized = false
     enrolled = false
     reporter = undefined
-
-    for (const trace of activeTraces) {
-        trace.cancel()
-    }
-    activeTraces.clear()
 }

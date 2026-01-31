@@ -83,10 +83,10 @@ describe('trace-controller', () => {
     })
 
     afterEach(() => {
-        vi.useRealTimers()
-        // Reset before unstubbing (cancel() needs performance.clearMarks)
+        // Reset before switching timers or unstubbing (cancel() needs performance.clearMarks)
         resetController()
         resetFeatureDetection()
+        vi.useRealTimers()
         vi.unstubAllGlobals()
     })
 
@@ -204,24 +204,25 @@ describe('trace-controller', () => {
 
     describe('signInteractionTrace', () => {
         it('is no-op when not initialized', () => {
+            document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test')
             expect(mockObservers).toHaveLength(0)
         })
 
-        it('creates trace when initialized', () => {
+        it('is no-op without pointerup event', () => {
             const reporter = vi.fn()
-            const cleanup = initInteractionTraceMonitor({ reporter })
+            initInteractionTraceMonitor({ reporter })
 
             signInteractionTrace('test-interaction')
 
-            expect(mockObservers.length).toBeGreaterThan(0)
-            cleanup()
+            expect(mockObservers).toHaveLength(0)
         })
 
         it('calls reporter when trace completes', () => {
             const reporter = vi.fn()
             initInteractionTraceMonitor({ reporter })
 
+            document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test-interaction', { key: 'value' })
 
             const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
@@ -242,16 +243,209 @@ describe('trace-controller', () => {
             })
         })
 
-        it('supports multiple concurrent traces', () => {
+        it('signs the most recent trace from pointerup', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            signInteractionTrace('my-interaction', { extra: 'data' })
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).toHaveBeenCalledOnce()
+            expect(reporter.mock.calls[0]?.[0]).toMatchObject({
+                details: { name: 'my-interaction', extra: 'data' },
+            })
+        })
+    })
+
+    describe('pointerup lifecycle', () => {
+        it('creates a trace on pointerup event', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            expect(loafObserver).toBeDefined()
+        })
+
+        it('cancels previous trace on new pointerup', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            signInteractionTrace('first')
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+
+            const firstLoafObserver = mockObservers[0]
+            firstLoafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).not.toHaveBeenCalled()
+        })
+
+        it('does not report unsigned traces', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).not.toHaveBeenCalled()
+        })
+
+        it('removes pointerup listener on cleanup', () => {
             const reporter = vi.fn()
             const cleanup = initInteractionTraceMonitor({ reporter })
 
-            signInteractionTrace('trace-1')
-            signInteractionTrace('trace-2')
+            cleanup()
+
+            mockObservers.length = 0
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+
+            expect(mockObservers).toHaveLength(0)
+        })
+
+        it('registers pointerup listener on initialization', () => {
+            const addEventListenerSpy = vi.spyOn(document, 'addEventListener')
+
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function))
+            addEventListenerSpy.mockRestore()
+        })
+
+        it('removes completed/cancelled traces after cleanup timer', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            signInteractionTrace('first')
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).toHaveBeenCalledOnce()
+
+            vi.advanceTimersByTime(1000)
+
+            expect(reporter).toHaveBeenCalledOnce()
+        })
+
+        it('resets cleanup timer on new pointerup', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            signInteractionTrace('first')
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            vi.advanceTimersByTime(800)
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            vi.advanceTimersByTime(800)
+
+            expect(reporter).toHaveBeenCalledOnce()
+        })
+
+        it('cancels all previous traces when multiple pointerups occur', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            document.dispatchEvent(new PointerEvent('pointerup'))
+
+            signInteractionTrace('third-interaction')
 
             const loafObservers = mockObservers.filter((o) => o.type === 'long-animation-frame')
-            expect(loafObservers.length).toBe(2)
-            cleanup()
+            const loafObserver = loafObservers.at(-1)
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).toHaveBeenCalledOnce()
+            expect(reporter.mock.calls[0]?.[0]).toMatchObject({
+                details: { name: 'third-interaction' },
+            })
+        })
+
+        it('allows updating trace details before completion', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({ reporter })
+
+            document.dispatchEvent(new PointerEvent('pointerup'))
+            signInteractionTrace('button-click', { buttonId: 'submit' })
+            signInteractionTrace('button-click', { buttonId: 'submit', validated: true })
+
+            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            loafObserver?.callback(
+                {
+                    getEntries: () => [],
+                    getEntriesByName: () => [],
+                    getEntriesByType: () => [],
+                } as PerformanceObserverEntryList,
+                {} as PerformanceObserver,
+            )
+            vi.advanceTimersByTime(501)
+
+            expect(reporter).toHaveBeenCalledOnce()
+            expect(reporter.mock.calls[0]?.[0]).toMatchObject({
+                details: { name: 'button-click', buttonId: 'submit', validated: true },
+            })
         })
     })
 
@@ -260,6 +454,7 @@ describe('trace-controller', () => {
             const reporter = vi.fn()
             const cleanup = initInteractionTraceMonitor({ reporter })
 
+            document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test-interaction')
 
             cleanup()
@@ -309,6 +504,7 @@ describe('trace-controller', () => {
                 abortSignal: controller.signal,
             })
 
+            document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test-interaction')
 
             controller.abort()
