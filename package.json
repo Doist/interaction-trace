@@ -58,7 +58,7 @@
     },
     "lint-staged": {
         "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched",
-        "*.{ts,mts,tsx}": "tsc --noEmit"
+        "*.{ts,mts,tsx}": "bash -c 'tsc --noEmit'"
     },
     "devDependencies": {
         "@biomejs/biome": "2.3.11",
