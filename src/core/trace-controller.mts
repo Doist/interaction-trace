@@ -73,6 +73,8 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
     }
 
     initialized = true
+    // Safe: TDetails extends TraceDetails, and the actual details object
+    // passed to the reporter comes from signInteractionTrace which preserves the shape
     reporter = config.reporter as TraceReporter
 
     document.addEventListener('pointerup', handlePointerUp)
@@ -131,7 +133,7 @@ export function signInteractionTrace<TDetails extends TraceDetails>(
         return
     }
 
-    const mergedDetails = { name, ...details } as TDetails
+    const mergedDetails = { name, ...details }
     lastTrace.sign(mergedDetails)
 }
 
