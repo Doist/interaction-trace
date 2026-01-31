@@ -93,7 +93,7 @@ describe('InteractionTrace', () => {
 
         expect(trace.id).toBe('test-uuid-1234')
 
-        trace.dispose()
+        trace.cancel()
     })
 
     it('sets up PerformanceObservers for loaf and event', () => {
@@ -104,7 +104,7 @@ describe('InteractionTrace', () => {
         expect(types).toContain('long-animation-frame')
         expect(types).toContain('event')
 
-        trace.dispose()
+        trace.cancel()
     })
 
     it('reports when signed and LoAF frames complete', () => {
@@ -249,12 +249,12 @@ describe('InteractionTrace', () => {
         expect(onComplete).toHaveBeenCalledOnce()
     })
 
-    it('dispose prevents reporting', () => {
+    it('cancel prevents reporting', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
         trace.sign({ name: 'test-interaction' })
-        trace.dispose()
+        trace.cancel()
 
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
         loafObserver?.callback(
@@ -271,15 +271,76 @@ describe('InteractionTrace', () => {
         expect(onComplete).not.toHaveBeenCalled()
     })
 
-    it('sign after dispose is no-op', () => {
+    it('sign after cancel is no-op', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        trace.dispose()
+        trace.cancel()
         trace.sign({ name: 'test-interaction' })
 
         vi.advanceTimersByTime(15001)
 
         expect(onComplete).not.toHaveBeenCalled()
+    })
+
+    it('isProcessed returns false initially and true after processing', () => {
+        const onComplete = vi.fn()
+        const trace = new InteractionTrace(onComplete)
+
+        expect(trace.isProcessed).toBe(false)
+
+        trace.sign({ name: 'test-interaction' })
+
+        // Trigger LoAF and complete
+        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        loafObserver?.callback(
+            {
+                getEntries: () => [],
+                getEntriesByName: () => [],
+                getEntriesByType: () => [],
+            } as PerformanceObserverEntryList,
+            {} as PerformanceObserver,
+        )
+
+        vi.advanceTimersByTime(501)
+
+        expect(trace.isProcessed).toBe(true)
+    })
+
+    it('isCancelled returns false initially and true after cancel', () => {
+        const onComplete = vi.fn()
+        const trace = new InteractionTrace(onComplete)
+
+        expect(trace.isCancelled).toBe(false)
+
+        trace.cancel()
+
+        expect(trace.isCancelled).toBe(true)
+    })
+
+    it('cancel is idempotent', () => {
+        const onComplete = vi.fn()
+        const trace = new InteractionTrace(onComplete)
+
+        trace.sign({ name: 'test-interaction' })
+        trace.cancel()
+        trace.cancel()
+        trace.cancel()
+
+        expect(trace.isCancelled).toBe(true)
+        expect(onComplete).not.toHaveBeenCalled()
+    })
+
+    it('cancel clears performance marks', () => {
+        const onComplete = vi.fn()
+        const trace = new InteractionTrace(onComplete)
+
+        // The constructor creates marks, verify they exist
+        expect(performanceMarks.size).toBeGreaterThan(0)
+
+        trace.cancel()
+
+        // After cancel, marks should be cleared
+        expect(performanceMarks.size).toBe(0)
     })
 })

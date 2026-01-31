@@ -16,8 +16,6 @@ describe('trace-controller', () => {
 
     beforeEach(() => {
         vi.useFakeTimers()
-        resetController()
-        resetFeatureDetection()
         mockObservers = []
         performanceMarks = new Map()
 
@@ -78,13 +76,18 @@ describe('trace-controller', () => {
             setItem: (key: string, value: string) => storage.set(key, value),
             removeItem: (key: string) => storage.delete(key),
         })
+
+        // Reset after stubs are set up (cancel() needs performance.clearMarks)
+        resetController()
+        resetFeatureDetection()
     })
 
     afterEach(() => {
         vi.useRealTimers()
-        vi.unstubAllGlobals()
+        // Reset before unstubbing (cancel() needs performance.clearMarks)
         resetController()
         resetFeatureDetection()
+        vi.unstubAllGlobals()
     })
 
     describe('initInteractionTraceMonitor', () => {
@@ -207,11 +210,12 @@ describe('trace-controller', () => {
 
         it('creates trace when initialized', () => {
             const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
+            const cleanup = initInteractionTraceMonitor({ reporter })
 
             signInteractionTrace('test-interaction')
 
             expect(mockObservers.length).toBeGreaterThan(0)
+            cleanup()
         })
 
         it('calls reporter when trace completes', () => {
@@ -240,18 +244,19 @@ describe('trace-controller', () => {
 
         it('supports multiple concurrent traces', () => {
             const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
+            const cleanup = initInteractionTraceMonitor({ reporter })
 
             signInteractionTrace('trace-1')
             signInteractionTrace('trace-2')
 
             const loafObservers = mockObservers.filter((o) => o.type === 'long-animation-frame')
             expect(loafObservers.length).toBe(2)
+            cleanup()
         })
     })
 
     describe('cleanup', () => {
-        it('disposes active traces on cleanup', () => {
+        it('cancels active traces on cleanup', () => {
             const reporter = vi.fn()
             const cleanup = initInteractionTraceMonitor({ reporter })
 
@@ -295,7 +300,7 @@ describe('trace-controller', () => {
             expect(isMonitorActive()).toBe(false)
         })
 
-        it('disposes active traces when signal is aborted', () => {
+        it('cancels active traces when signal is aborted', () => {
             const controller = new AbortController()
             const reporter = vi.fn()
 

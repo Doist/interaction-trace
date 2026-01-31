@@ -9,8 +9,8 @@ let initialized = false
 let enrolled = false
 let reporter: TraceReporter | undefined
 
-/** Active traces that need cleanup on dispose */
-const activeTraces = new Set<{ dispose(): void }>()
+/** Active traces that need cleanup on cancel */
+const activeTraces = new Set<{ cancel(): void }>()
 
 /**
  * Initializes the interaction trace monitor.
@@ -65,7 +65,7 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
         reporter = undefined
 
         for (const trace of activeTraces) {
-            trace.dispose()
+            trace.cancel()
         }
         activeTraces.clear()
     }
@@ -152,7 +152,7 @@ export function resetController(): void {
     reporter = undefined
 
     for (const trace of activeTraces) {
-        trace.dispose()
+        trace.cancel()
     }
     activeTraces.clear()
 }

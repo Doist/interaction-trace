@@ -27,7 +27,15 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
 
     private onComplete: TraceReporter<TDetails>
     private processed = false
-    private disposed = false
+    private _cancelled = false
+
+    get isProcessed(): boolean {
+        return this.processed
+    }
+
+    get isCancelled(): boolean {
+        return this._cancelled
+    }
 
     private details: TDetails | undefined
 
@@ -60,7 +68,7 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
      * Marks the start time for duration measurement.
      */
     sign(details: TDetails): void {
-        if (this.processed || this.disposed) {
+        if (this.processed || this._cancelled) {
             return
         }
 
@@ -68,16 +76,22 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
     }
 
     /**
-     * Disposes of the trace, cleaning up observers and timers.
-     * Does not call onComplete.
+     * Cancels the trace, cleaning up observers, timers, and any performance marks.
+     * Does not create measurements or call the reporter.
      */
-    dispose(): void {
-        if (this.disposed) {
+    cancel(): void {
+        if (this.processed || this._cancelled) {
             return
         }
 
-        this.disposed = true
+        this._cancelled = true
+        this.clearMarks()
         this.cleanup()
+    }
+
+    private clearMarks(): void {
+        performance.clearMarks(this.markStartName)
+        performance.clearMarks(this.markEndName)
     }
 
     private observeLongAnimationFrames(): void {
@@ -121,7 +135,7 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
     }
 
     private process(): void {
-        if (this.processed || this.disposed) {
+        if (this.processed || this._cancelled) {
             return
         }
 
