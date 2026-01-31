@@ -138,7 +138,7 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
                 this.markStartName,
                 this.markEndName,
             )
-            duration = measurement.duration ? Math.round(measurement.duration) : undefined
+            duration = measurement.duration != null ? Math.round(measurement.duration) : undefined
         }
 
         performance.clearMarks(this.markStartName)
@@ -156,7 +156,7 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
                 duration: this.inpDuration,
             })
 
-            inp = measurement?.duration ? Math.round(measurement.duration) : undefined
+            inp = measurement?.duration != null ? Math.round(measurement.duration) : undefined
             performance.clearMeasures(inpMeasureName)
         }
 
