@@ -21,6 +21,7 @@ function handlePointerUp(): void {
     for (const trace of traces) {
         trace.cancel()
     }
+    traces = []
 
     const trace = new InteractionTrace<TraceDetails>((report) => {
         reporter?.(report)
