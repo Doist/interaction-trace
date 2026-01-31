@@ -35,10 +35,11 @@ const cleanup = initInteractionTraceMonitor({
 
 ### Sign Traces
 
+Traces are created automatically on `pointerup` events. Use `signInteractionTrace()` to name and provide details for the pending trace from the last click.
+
 ```typescript
 import { signInteractionTrace } from '@doist/interaction-trace'
 
-// Sign when an interaction begins
 button.addEventListener('click', () => {
     signInteractionTrace('open modal', { modalId: 'settings' })
     openModal()
@@ -85,15 +86,15 @@ type TraceReporter = (report: TraceReport) => void | Promise<void>
 
 interface TraceReport {
     id: string                        // Unique trace ID (crypto.randomUUID())
-    name: string                      // Trace name from signInteractionTrace()
-    startTime: number                 // performance.now() at sign time
-    duration: number                  // Total LoAF duration
-    inp: number | undefined           // INP value if captured
-    details: Record<string, unknown>  // From signInteractionTrace() call
-    context: Record<string, unknown>  // From InteractionTraceProvider
+    duration: number                  // Total LoAF duration (ms)
+    inp: number | undefined           // INP value if captured (ms)
+    details: {
+        name: string                  // Trace name from signInteractionTrace()
+        [key: string]: unknown        // Additional details (merged with context)
+    }
     device: {
-        memoryGB: string              // Bucketed: "<4", "4-8", ">8"
-        cpuCores: string              // Bucketed: "<4", "4-8", ">8"
+        memoryGB: string              // Bucketed: "0.25-2", "3-7", "8-plus", or "unknown"
+        cpuCores: string              // Bucketed: "1-8", "9-16", "17-plus"
     }
 }
 ```
@@ -108,6 +109,14 @@ interface TraceReport {
 | `PerformanceObserver` | All modern browsers | Required |
 
 **SSR/Node.js:** All browser APIs are safely guarded. Functions return no-ops when APIs are unavailable.
+
+## Known Limitations
+
+### Keyboard Interactions
+
+This library only tracks pointer-based interactions (`pointerup` events). Keyboard-initiated interactions (e.g., pressing Enter to submit a form, Space to toggle a checkbox) are not captured. INP metrics will only reflect mouse/touch interactions.
+
+If your application has significant keyboard usage, consider this when interpreting the collected metrics.
 
 ## Development
 
