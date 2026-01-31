@@ -109,6 +109,19 @@ interface TraceReport {
 
 **SSR/Node.js:** All browser APIs are safely guarded. Functions return no-ops when APIs are unavailable.
 
+## Development
+
+Development requires Node.js >= 20.0.0 (see `.node-version` for the pinned version).
+
+> [!NOTE]
+> No `engines` field in package.json—only devDependencies need this version, so consumers won't face version conflicts.
+
+```bash
+npm install
+npm run build
+npm test
+```
+
 ## License
 
 Released under the [MIT License](https://opensource.org/licenses/MIT).

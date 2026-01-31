@@ -15,7 +15,7 @@
     },
     "sideEffects": false,
     "scripts": {
-        "build": "rollup -c",
+        "build": "rimraf dist && rollup -c",
         "check": "run-p check:* -c -l",
         "check:types": "tsc --noEmit",
         "check:biome": "biome check",
@@ -57,7 +57,8 @@
         }
     },
     "lint-staged": {
-        "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched"
+        "*.{js,ts,mjs,mts,tsx,json,md}": "biome check --write --no-errors-on-unmatched",
+        "*.{ts,mts,tsx}": "tsc --noEmit"
     },
     "devDependencies": {
         "@biomejs/biome": "2.3.11",
@@ -70,6 +71,7 @@
         "husky": "9.1.7",
         "lint-staged": "16.2.7",
         "npm-run-all2": "8.0.4",
+        "rimraf": "^6.1.2",
         "rollup": "4.55.2",
         "tslib": "2.8.1",
         "typescript": "5.9.3",

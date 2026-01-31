@@ -21,6 +21,7 @@ export default {
             tsconfig: './tsconfig.json',
             declaration: true,
             declarationDir: 'dist',
+            exclude: ['**/*.test.mts', '**/*.test.ts'],
         }),
     ],
 }
