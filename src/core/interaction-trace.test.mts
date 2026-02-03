@@ -26,7 +26,6 @@ describe('InteractionTrace', () => {
             hardwareConcurrency: 10,
         })
 
-        // Mock PerformanceObserver
         vi.stubGlobal(
             'PerformanceObserver',
             class MockPerformanceObserver {
@@ -54,19 +53,16 @@ describe('InteractionTrace', () => {
             },
         )
 
-        // Mock performance API
         vi.stubGlobal('performance', {
             mark: (name: string) => {
                 performanceMarks.set(name, { startTime: Date.now() })
             },
             measure: (name: string, startOrOptions?: string | object, _end?: string) => {
                 if (typeof startOrOptions === 'object') {
-                    // INP style: { start, duration }
                     const opts = startOrOptions as { start: number; duration: number }
                     performanceMeasures.set(name, { duration: opts.duration })
                     return { duration: opts.duration }
                 }
-                // LoAF style: start and end marks
                 performanceMeasures.set(name, { duration: 100 })
                 return { duration: 100 }
             },
@@ -113,7 +109,6 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction', key: 'value' })
 
-        // Trigger a LoAF frame
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
         loafObserver?.callback(
             {
@@ -124,7 +119,6 @@ describe('InteractionTrace', () => {
             {} as PerformanceObserver,
         )
 
-        // Fast forward past the 500ms timeout
         vi.advanceTimersByTime(501)
 
         expect(onComplete).toHaveBeenCalledOnce()
@@ -144,7 +138,6 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction' })
 
-        // Trigger INP observation
         const inpObserver = mockObservers.find((o) => o.type === 'event')
         inpObserver?.callback(
             {
@@ -161,7 +154,6 @@ describe('InteractionTrace', () => {
             {} as PerformanceObserver,
         )
 
-        // Trigger LoAF and complete
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
         loafObserver?.callback(
             {
@@ -183,7 +175,6 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const _trace = new InteractionTrace(onComplete)
 
-        // Trigger LoAF without signing
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
         loafObserver?.callback(
             {
@@ -205,10 +196,8 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction' })
 
-        // Fast forward 15 seconds without any LoAF frames
         vi.advanceTimersByTime(15001)
 
-        // Should have tried to report but no duration without end mark
         expect(onComplete).not.toHaveBeenCalled()
     })
 
@@ -220,7 +209,6 @@ describe('InteractionTrace', () => {
 
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
 
-        // First LoAF frame
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -232,7 +220,6 @@ describe('InteractionTrace', () => {
 
         vi.advanceTimersByTime(400)
 
-        // Another LoAF frame resets the timeout
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -291,7 +278,6 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction' })
 
-        // Trigger LoAF and complete
         const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
         loafObserver?.callback(
             {
@@ -335,12 +321,10 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        // The constructor creates marks, verify they exist
         expect(performanceMarks.size).toBeGreaterThan(0)
 
         trace.cancel()
 
-        // After cancel, marks should be cleared
         expect(performanceMarks.size).toBe(0)
     })
 })

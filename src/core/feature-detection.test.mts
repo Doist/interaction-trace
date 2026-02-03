@@ -46,7 +46,6 @@ describe('feature-detection', () => {
 
             expect(isLoafSupported()).toBe(true)
 
-            // Change the value - should still return memoized result
             vi.stubGlobal('PerformanceObserver', {
                 supportedEntryTypes: [],
             })

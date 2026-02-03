@@ -158,7 +158,6 @@ describe('trace-controller', () => {
                 enrollment: { sampleRate: 30 },
             })
 
-            // random() = 0.5, so 50 < 30 is false, not enrolled
             expect(isMonitorActive()).toBe(false)
         })
 
