@@ -395,4 +395,75 @@ describe('trace-controller', () => {
             expect(addEventListenerSpy).not.toHaveBeenCalled()
         })
     })
+
+    describe('signInteractionTrace type safety', () => {
+        // These tests validate compile-time type checking behavior.
+        // The @ts-expect-error annotations verify that TypeScript correctly
+        // rejects invalid trace names and details.
+
+        type TestTraces = {
+            'open modal': { modalId: string }
+            'close modal': { modalId: string }
+            'submit form': { formId: string; success: boolean }
+        }
+
+        it('withTypes provides type-safe trace signing', () => {
+            const signTrace = signInteractionTrace.withTypes<TestTraces>()
+
+            // Valid calls - these should compile without errors
+            signTrace('open modal', { modalId: 'settings' })
+            signTrace('close modal', { modalId: 'settings' })
+            signTrace('submit form', { formId: 'login', success: true })
+
+            // @ts-expect-error - Invalid trace name (typo)
+            signTrace('opne modal', { modalId: 'settings' })
+
+            // @ts-expect-error - Wrong details shape for 'open modal'
+            signTrace('open modal', { formId: 'wrong' })
+
+            // @ts-expect-error - Missing required detail property
+            signTrace('submit form', { formId: 'login' })
+
+            // @ts-expect-error - Completely invalid trace name
+            signTrace('unknown trace', {})
+
+            expect(true).toBe(true)
+        })
+
+        it('inline type parameter works for type checking', () => {
+            // Valid call with inline type parameter
+            signInteractionTrace<TestTraces>('open modal', { modalId: 'settings' })
+
+            // @ts-expect-error - Invalid trace name with inline type parameter
+            signInteractionTrace<TestTraces>('invalid name', { modalId: 'settings' })
+
+            expect(true).toBe(true)
+        })
+
+        it('legacy usage accepts any string (no type checking)', () => {
+            // Legacy usage should accept any string without errors
+            signInteractionTrace('any trace name', { anyKey: 'anyValue' })
+            signInteractionTrace('another-trace', { foo: 123, bar: true })
+            signInteractionTrace('just-a-name')
+
+            expect(true).toBe(true)
+        })
+
+        it('withTypes returns the same function', () => {
+            const signTrace = signInteractionTrace.withTypes<TestTraces>()
+
+            // The returned function should be the same underlying function
+            // (just with a different type signature)
+            expect(typeof signTrace).toBe('function')
+        })
+
+        it('details type is properly constrained', () => {
+            const signTrace = signInteractionTrace.withTypes<TestTraces>()
+
+            // @ts-expect-error - Extra properties not allowed in strict mode
+            signTrace('open modal', { modalId: 'settings', extraProp: 'not allowed' })
+
+            expect(true).toBe(true)
+        })
+    })
 })

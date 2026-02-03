@@ -1,4 +1,24 @@
 import type { InteractionTraceConfig, TraceDetails, TraceReporter } from '../types.mjs'
+
+/**
+ * Map of trace names to their additional detail shapes.
+ * Consumers define this to constrain valid trace names.
+ */
+type TraceDefinitions = Record<string, Record<string, unknown>>
+
+/**
+ * Extract valid trace names from a definitions type.
+ */
+type TraceNames<TDefs extends TraceDefinitions> = keyof TDefs & string
+
+/**
+ * A pre-typed signInteractionTrace function bound to specific TraceDefinitions.
+ */
+type TypedSignInteractionTrace<TDefs extends TraceDefinitions> = <TName extends TraceNames<TDefs>>(
+    name: TName,
+    details?: TDefs[TName],
+) => void
+
 import { isBrowserSupported } from './feature-detection.mjs'
 import { InteractionTrace } from './interaction-trace.mjs'
 
@@ -119,11 +139,31 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
  *
  * @param name - The trace name
  * @param details - Optional additional trace details
+ *
+ * @example
+ * // With TraceDefinitions type parameter
+ * signInteractionTrace<MyTraces>('open modal', { modalId: 'settings' })
+ *
+ * @example
+ * // Legacy/simple usage (any string)
+ * signInteractionTrace('any trace name', { anyKey: 'anyValue' })
+ *
+ * @example
+ * // Pre-typed pattern (recommended)
+ * const signTrace = signInteractionTrace.withTypes<MyTraces>()
+ * signTrace('open modal', { modalId: 'settings' })
  */
-export function signInteractionTrace<TDetails extends TraceDetails>(
-    name: TDetails['name'],
-    details?: Omit<TDetails, 'name'>,
-): void {
+// Overload 1: With TraceDefinitions type parameter
+export function signInteractionTrace<
+    TDefs extends TraceDefinitions,
+    TName extends TraceNames<TDefs> = TraceNames<TDefs>,
+>(name: TName, details?: TDefs[TName]): void
+
+// Overload 2: Legacy/simple usage (any string)
+export function signInteractionTrace(name: string, details?: Record<string, unknown>): void
+
+// Implementation
+export function signInteractionTrace(name: string, details?: Record<string, unknown>): void {
     if (!initialized || !enrolled || !reporter) {
         return
     }
@@ -135,6 +175,26 @@ export function signInteractionTrace<TDetails extends TraceDetails>(
 
     const mergedDetails = { name, ...details }
     lastTrace.sign(mergedDetails)
+}
+
+/**
+ * Creates a pre-typed signInteractionTrace function bound to specific TraceDefinitions.
+ * This is the recommended pattern for type-safe trace signing.
+ *
+ * @example
+ * type MyTraces = {
+ *     'open modal': { modalId: string }
+ *     'submit form': { formId: string }
+ * }
+ *
+ * const signTrace = signInteractionTrace.withTypes<MyTraces>()
+ * signTrace('open modal', { modalId: 'settings' })  // ✅ autocomplete works!
+ * signTrace('opne modal', { modalId: 'settings' })  // ❌ Error: typo caught
+ */
+signInteractionTrace.withTypes = function withTypes<
+    TDefs extends TraceDefinitions,
+>(): TypedSignInteractionTrace<TDefs> {
+    return signInteractionTrace as TypedSignInteractionTrace<TDefs>
 }
 
 function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean {
