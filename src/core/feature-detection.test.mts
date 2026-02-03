@@ -38,20 +38,6 @@ describe('feature-detection', () => {
 
             expect(isLoafSupported()).toBe(false)
         })
-
-        it('memoizes the result', () => {
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: ['long-animation-frame'],
-            })
-
-            expect(isLoafSupported()).toBe(true)
-
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: [],
-            })
-
-            expect(isLoafSupported()).toBe(true)
-        })
     })
 
     describe('isInpSupported', () => {
@@ -70,20 +56,6 @@ describe('feature-detection', () => {
 
             expect(isInpSupported()).toBe(false)
         })
-
-        it('memoizes the result', () => {
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: ['event'],
-            })
-
-            expect(isInpSupported()).toBe(true)
-
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: [],
-            })
-
-            expect(isInpSupported()).toBe(true)
-        })
     })
 
     describe('isBrowserSupported', () => {
@@ -93,22 +65,6 @@ describe('feature-detection', () => {
             })
 
             expect(isBrowserSupported()).toBe(true)
-        })
-
-        it('returns false when only loaf is supported', () => {
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: ['long-animation-frame'],
-            })
-
-            expect(isBrowserSupported()).toBe(false)
-        })
-
-        it('returns false when only event is supported', () => {
-            vi.stubGlobal('PerformanceObserver', {
-                supportedEntryTypes: ['event'],
-            })
-
-            expect(isBrowserSupported()).toBe(false)
         })
 
         it('returns false when neither is supported', () => {

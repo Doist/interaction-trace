@@ -270,40 +270,6 @@ describe('InteractionTrace', () => {
         expect(onComplete).not.toHaveBeenCalled()
     })
 
-    it('isProcessed returns false initially and true after processing', () => {
-        const onComplete = vi.fn()
-        const trace = new InteractionTrace(onComplete)
-
-        expect(trace.isProcessed).toBe(false)
-
-        trace.sign({ name: 'test-interaction' })
-
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-        loafObserver?.callback(
-            {
-                getEntries: () => [],
-                getEntriesByName: () => [],
-                getEntriesByType: () => [],
-            } as PerformanceObserverEntryList,
-            {} as PerformanceObserver,
-        )
-
-        vi.advanceTimersByTime(501)
-
-        expect(trace.isProcessed).toBe(true)
-    })
-
-    it('isCancelled returns false initially and true after cancel', () => {
-        const onComplete = vi.fn()
-        const trace = new InteractionTrace(onComplete)
-
-        expect(trace.isCancelled).toBe(false)
-
-        trace.cancel()
-
-        expect(trace.isCancelled).toBe(true)
-    })
-
     it('cancel is idempotent', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)

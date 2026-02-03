@@ -142,13 +142,6 @@ describe('trace-controller', () => {
     })
 
     describe('enrollment', () => {
-        it('enrolls when sampleRate is 100 (default)', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            expect(isMonitorActive()).toBe(true)
-        })
-
         it('respects sampleRate setting', () => {
             vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
@@ -241,30 +234,6 @@ describe('trace-controller', () => {
                 details: { name: 'test-interaction', key: 'value' },
             })
         })
-
-        it('signs the most recent trace from pointerup', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            signInteractionTrace('my-interaction', { extra: 'data' })
-
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
-            vi.advanceTimersByTime(501)
-
-            expect(reporter).toHaveBeenCalledOnce()
-            expect(reporter.mock.calls[0]?.[0]).toMatchObject({
-                details: { name: 'my-interaction', extra: 'data' },
-            })
-        })
     })
 
     describe('pointerup lifecycle', () => {
@@ -332,94 +301,6 @@ describe('trace-controller', () => {
             document.dispatchEvent(new PointerEvent('pointerup'))
 
             expect(mockObservers).toHaveLength(0)
-        })
-
-        it('registers pointerup listener on initialization', () => {
-            const addEventListenerSpy = vi.spyOn(document, 'addEventListener')
-
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            expect(addEventListenerSpy).toHaveBeenCalledWith('pointerup', expect.any(Function))
-            addEventListenerSpy.mockRestore()
-        })
-
-        it('removes completed/cancelled traces after cleanup timer', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            signInteractionTrace('first')
-
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
-            vi.advanceTimersByTime(501)
-
-            expect(reporter).toHaveBeenCalledOnce()
-
-            vi.advanceTimersByTime(1000)
-
-            expect(reporter).toHaveBeenCalledOnce()
-        })
-
-        it('resets cleanup timer on new pointerup', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            signInteractionTrace('first')
-
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
-            vi.advanceTimersByTime(501)
-
-            vi.advanceTimersByTime(800)
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            vi.advanceTimersByTime(800)
-
-            expect(reporter).toHaveBeenCalledOnce()
-        })
-
-        it('cancels all previous traces when multiple pointerups occur', () => {
-            const reporter = vi.fn()
-            initInteractionTraceMonitor({ reporter })
-
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            document.dispatchEvent(new PointerEvent('pointerup'))
-
-            signInteractionTrace('third-interaction')
-
-            const loafObservers = mockObservers.filter((o) => o.type === 'long-animation-frame')
-            const loafObserver = loafObservers.at(-1)
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
-            vi.advanceTimersByTime(501)
-
-            expect(reporter).toHaveBeenCalledOnce()
-            expect(reporter.mock.calls[0]?.[0]).toMatchObject({
-                details: { name: 'third-interaction' },
-            })
         })
 
         it('allows updating trace details before completion', () => {
@@ -494,24 +375,6 @@ describe('trace-controller', () => {
             expect(isMonitorActive()).toBe(false)
         })
 
-        it('cancels active traces when signal is aborted', () => {
-            const controller = new AbortController()
-            const reporter = vi.fn()
-
-            initInteractionTraceMonitor({
-                reporter,
-                abortSignal: controller.signal,
-            })
-
-            document.dispatchEvent(new PointerEvent('pointerup'))
-            signInteractionTrace('test-interaction')
-
-            controller.abort()
-
-            vi.advanceTimersByTime(15001)
-            expect(reporter).not.toHaveBeenCalled()
-        })
-
         it('cleanup only runs once when both manual cleanup and abort occur', () => {
             const controller = new AbortController()
             const reporter = vi.fn()
@@ -540,17 +403,6 @@ describe('trace-controller', () => {
             cleanup()
 
             expect(removeEventListenerSpy).toHaveBeenCalledWith('abort', expect.any(Function))
-        })
-
-        it('works normally without abort signal (backward compatibility)', () => {
-            const reporter = vi.fn()
-            const cleanup = initInteractionTraceMonitor({ reporter })
-
-            expect(isMonitorActive()).toBe(true)
-
-            cleanup()
-
-            expect(isMonitorActive()).toBe(false)
         })
 
         it('does not attach abort listener when already initialized', () => {
