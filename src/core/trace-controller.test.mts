@@ -397,10 +397,6 @@ describe('trace-controller', () => {
     })
 
     describe('signInteractionTrace type safety', () => {
-        // These tests validate compile-time type checking behavior.
-        // The @ts-expect-error annotations verify that TypeScript correctly
-        // rejects invalid trace names and details.
-
         type TestTraces = {
             'open modal': { modalId: string }
             'close modal': { modalId: string }
@@ -410,7 +406,6 @@ describe('trace-controller', () => {
         it('withTypes provides type-safe trace signing', () => {
             const signTrace = signInteractionTrace.withTypes<TestTraces>()
 
-            // Valid calls - these should compile without errors
             signTrace('open modal', { modalId: 'settings' })
             signTrace('close modal', { modalId: 'settings' })
             signTrace('submit form', { formId: 'login', success: true })
@@ -431,7 +426,6 @@ describe('trace-controller', () => {
         })
 
         it('inline type parameter works for type checking', () => {
-            // Valid call with inline type parameter
             signInteractionTrace<TestTraces>('open modal', { modalId: 'settings' })
 
             // @ts-expect-error - Invalid trace name with inline type parameter
@@ -441,20 +435,11 @@ describe('trace-controller', () => {
         })
 
         it('legacy usage accepts any string (no type checking)', () => {
-            // Legacy usage should accept any string without errors
             signInteractionTrace('any trace name', { anyKey: 'anyValue' })
             signInteractionTrace('another-trace', { foo: 123, bar: true })
             signInteractionTrace('just-a-name')
 
             expect(true).toBe(true)
-        })
-
-        it('withTypes returns the same function', () => {
-            const signTrace = signInteractionTrace.withTypes<TestTraces>()
-
-            // The returned function should be the same underlying function
-            // (just with a different type signature)
-            expect(typeof signTrace).toBe('function')
         })
 
         it('details type is properly constrained', () => {

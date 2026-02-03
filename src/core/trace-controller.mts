@@ -153,16 +153,13 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
  * const signTrace = signInteractionTrace.withTypes<MyTraces>()
  * signTrace('open modal', { modalId: 'settings' })
  */
-// Overload 1: With TraceDefinitions type parameter
 export function signInteractionTrace<
     TDefs extends TraceDefinitions,
     TName extends TraceNames<TDefs> = TraceNames<TDefs>,
 >(name: TName, details?: TDefs[TName]): void
 
-// Overload 2: Legacy/simple usage (any string)
 export function signInteractionTrace(name: string, details?: Record<string, unknown>): void
 
-// Implementation
 export function signInteractionTrace(name: string, details?: Record<string, unknown>): void {
     if (!initialized || !enrolled || !reporter) {
         return
