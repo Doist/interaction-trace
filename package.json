@@ -61,7 +61,7 @@
         "*.{ts,mts,tsx}": "tsc --noEmit"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.3.11",
+        "@biomejs/biome": "2.3.13",
         "@doist/tsconfig": "2.0.1",
         "@rollup/plugin-node-resolve": "16.0.3",
         "@rollup/plugin-typescript": "12.3.0",
