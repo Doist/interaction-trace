@@ -120,7 +120,7 @@ If your application has significant keyboard usage, consider this when interpret
 
 ## Development
 
-Development requires Node.js >= 20.0.0 (see `.node-version` for the pinned version).
+Development requires Node.js >= 22.18.0 (for type stripping by default, see `.node-version` for the pinned version).
 
 > [!NOTE]
 > No `engines` field in package.json—only devDependencies need this version, so consumers won't face version conflicts.
