@@ -135,7 +135,7 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
  * signInteractionTrace<MyTraces>('open modal', { modalId: 'settings' })
  *
  * @example
- * // Legacy/simple usage (any string)
+ * // Untyped usage (any string)
  * signInteractionTrace('any trace name', { anyKey: 'anyValue' })
  *
  * @example

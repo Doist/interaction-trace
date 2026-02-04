@@ -115,7 +115,7 @@ describe('useInteractionTrace', () => {
             expect(true).toBe(true)
         })
 
-        it('legacy usage accepts any string (no type checking)', () => {
+        it('untyped usage accepts any string (no type checking)', () => {
             renderHook(() => useInteractionTrace('any trace name', { anyKey: 'anyValue' }))
             renderHook(() => useInteractionTrace('another-trace', { foo: 123, bar: true }))
             renderHook(() => useInteractionTrace('just-a-name'))
