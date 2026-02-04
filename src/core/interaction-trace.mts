@@ -101,6 +101,7 @@ export class InteractionTrace<TDetails extends TraceDetails = TraceDetails> {
             if (this.frameTimeout) {
                 clearTimeout(this.frameTimeout)
             }
+            performance.clearMarks(this.markEndName)
             performance.mark(this.markEndName)
 
             this.frameTimeout = setTimeout(() => {
