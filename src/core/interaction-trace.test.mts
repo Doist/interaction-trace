@@ -25,6 +25,7 @@ describe('InteractionTrace', () => {
     })
 
     afterEach(() => {
+        vi.runOnlyPendingTimers()
         vi.useRealTimers()
         vi.unstubAllGlobals()
     })

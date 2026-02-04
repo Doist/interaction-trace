@@ -43,6 +43,7 @@ describe('trace-controller', () => {
         // Reset before switching timers or unstubbing (cancel() needs performance.clearMarks)
         resetController()
         resetFeatureDetection()
+        vi.runOnlyPendingTimers()
         vi.useRealTimers()
         vi.unstubAllGlobals()
     })

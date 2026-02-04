@@ -2,44 +2,27 @@ import { renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetFeatureDetection } from '../core/feature-detection.mjs'
 import * as traceController from '../core/trace-controller.mjs'
+import {
+    createMockObserverRegistry,
+    createPerformanceMock,
+    createPerformanceObserverMock,
+} from '../test-utils/performance-mocks.mjs'
 import { useInteractionTrace } from './use-interaction-trace.mjs'
 
 describe('useInteractionTrace', () => {
-    let mockObservers: Array<{
-        type: string
-        callback: PerformanceObserverCallback
-    }>
+    const observerRegistry = createMockObserverRegistry()
+    const performanceMock = createPerformanceMock()
 
     beforeEach(() => {
-        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
-        mockObservers = []
+        vi.useFakeTimers()
+        observerRegistry.clear()
+        performanceMock.clear()
 
-        // Mock PerformanceObserver because HappyDOM doesn't support 'long-animation-frame'
-        // or 'event' entry types. We also need to capture callbacks to trigger them in tests.
         vi.stubGlobal(
             'PerformanceObserver',
-            Object.assign(
-                class MockPerformanceObserver {
-                    callback: PerformanceObserverCallback
-
-                    constructor(callback: PerformanceObserverCallback) {
-                        this.callback = callback
-                    }
-
-                    observe(options: { type: string }) {
-                        mockObservers.push({
-                            type: options.type,
-                            callback: this.callback,
-                        })
-                    }
-
-                    disconnect() {}
-                },
-                {
-                    supportedEntryTypes: ['long-animation-frame', 'event'],
-                },
-            ),
+            createPerformanceObserverMock({ registry: observerRegistry }),
         )
+        vi.stubGlobal('performance', performanceMock)
 
         traceController.resetController()
         resetFeatureDetection()
@@ -49,6 +32,7 @@ describe('useInteractionTrace', () => {
         sessionStorage.clear()
         traceController.resetController()
         resetFeatureDetection()
+        vi.runOnlyPendingTimers()
         vi.useRealTimers()
         vi.unstubAllGlobals()
     })
@@ -62,15 +46,7 @@ describe('useInteractionTrace', () => {
 
             renderHook(() => useInteractionTrace('test-interaction', { key: 'value' }))
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
+            observerRegistry.triggerCallback('long-animation-frame')
 
             vi.advanceTimersByTime(501)
 
@@ -88,15 +64,7 @@ describe('useInteractionTrace', () => {
 
             renderHook(() => useInteractionTrace('simple-trace'))
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
-            loafObserver?.callback(
-                {
-                    getEntries: () => [],
-                    getEntriesByName: () => [],
-                    getEntriesByType: () => [],
-                } as PerformanceObserverEntryList,
-                {} as PerformanceObserver,
-            )
+            observerRegistry.triggerCallback('long-animation-frame')
 
             vi.advanceTimersByTime(501)
 
