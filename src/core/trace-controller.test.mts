@@ -1,4 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+    createMockObserverRegistry,
+    createPerformanceMock,
+    createPerformanceObserverMock,
+} from '../test-utils/performance-mocks.mjs'
 import { resetFeatureDetection } from './feature-detection.mjs'
 import {
     initInteractionTraceMonitor,
@@ -8,74 +13,26 @@ import {
 } from './trace-controller.mjs'
 
 describe('trace-controller', () => {
-    let mockObservers: Array<{
-        type: string
-        callback: PerformanceObserverCallback
-    }>
-    let performanceMarks: Map<string, { startTime: number }>
+    const observerRegistry = createMockObserverRegistry()
+    const performanceMock = createPerformanceMock()
 
     beforeEach(() => {
         vi.useFakeTimers()
-        mockObservers = []
-        performanceMarks = new Map()
+        observerRegistry.clear()
+        performanceMock.clear()
 
-        vi.stubGlobal('crypto', {
-            randomUUID: () => `test-uuid-${Math.random().toString(36).slice(2)}`,
-        })
-
-        vi.stubGlobal('navigator', {
-            deviceMemory: 8,
-            hardwareConcurrency: 10,
-        })
-
-        vi.stubGlobal('PerformanceObserver', {
-            supportedEntryTypes: ['long-animation-frame', 'event'],
-        })
-
+        vi.stubGlobal('navigator', { deviceMemory: 8, hardwareConcurrency: 10 })
         vi.stubGlobal(
             'PerformanceObserver',
-            Object.assign(
-                class MockPerformanceObserver {
-                    callback: PerformanceObserverCallback
-
-                    constructor(callback: PerformanceObserverCallback) {
-                        this.callback = callback
-                    }
-
-                    observe(options: { type: string }) {
-                        mockObservers.push({
-                            type: options.type,
-                            callback: this.callback,
-                        })
-                    }
-
-                    disconnect() {}
-                },
-                {
-                    supportedEntryTypes: ['long-animation-frame', 'event'],
-                },
-            ),
+            createPerformanceObserverMock({
+                registry: observerRegistry,
+                supportedEntryTypes: ['long-animation-frame', 'event'],
+            }),
         )
+        vi.stubGlobal('performance', performanceMock)
 
-        vi.stubGlobal('performance', {
-            now: () => Date.now(),
-            mark: (name: string) => {
-                performanceMarks.set(name, { startTime: Date.now() })
-            },
-            measure: () => ({ duration: 100 }),
-            getEntriesByName: (name: string) => {
-                return performanceMarks.has(name) ? [{ name }] : []
-            },
-            clearMarks: () => {},
-            clearMeasures: () => {},
-        })
-
-        const storage = new Map<string, string>()
-        vi.stubGlobal('sessionStorage', {
-            getItem: (key: string) => storage.get(key) ?? null,
-            setItem: (key: string, value: string) => storage.set(key, value),
-            removeItem: (key: string) => storage.delete(key),
-        })
+        // Clear sessionStorage to prevent state leaking between tests
+        sessionStorage.clear()
 
         // Reset after stubs are set up (cancel() needs performance.clearMarks)
         resetController()
@@ -198,7 +155,7 @@ describe('trace-controller', () => {
         it('is no-op when not initialized', () => {
             document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test')
-            expect(mockObservers).toHaveLength(0)
+            expect(observerRegistry.observers).toHaveLength(0)
         })
 
         it('is no-op without pointerup event', () => {
@@ -207,7 +164,7 @@ describe('trace-controller', () => {
 
             signInteractionTrace('test-interaction')
 
-            expect(mockObservers).toHaveLength(0)
+            expect(observerRegistry.observers).toHaveLength(0)
         })
 
         it('calls reporter when trace completes', () => {
@@ -217,7 +174,7 @@ describe('trace-controller', () => {
             document.dispatchEvent(new PointerEvent('pointerup'))
             signInteractionTrace('test-interaction', { key: 'value' })
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            const loafObserver = observerRegistry.findByType('long-animation-frame')
             loafObserver?.callback(
                 {
                     getEntries: () => [],
@@ -243,7 +200,7 @@ describe('trace-controller', () => {
 
             document.dispatchEvent(new PointerEvent('pointerup'))
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            const loafObserver = observerRegistry.findByType('long-animation-frame')
             expect(loafObserver).toBeDefined()
         })
 
@@ -256,7 +213,7 @@ describe('trace-controller', () => {
 
             document.dispatchEvent(new PointerEvent('pointerup'))
 
-            const firstLoafObserver = mockObservers[0]
+            const firstLoafObserver = observerRegistry.observers[0]
             firstLoafObserver?.callback(
                 {
                     getEntries: () => [],
@@ -276,7 +233,7 @@ describe('trace-controller', () => {
 
             document.dispatchEvent(new PointerEvent('pointerup'))
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            const loafObserver = observerRegistry.findByType('long-animation-frame')
             loafObserver?.callback(
                 {
                     getEntries: () => [],
@@ -296,11 +253,11 @@ describe('trace-controller', () => {
 
             cleanup()
 
-            mockObservers.length = 0
+            observerRegistry.observers.length = 0
 
             document.dispatchEvent(new PointerEvent('pointerup'))
 
-            expect(mockObservers).toHaveLength(0)
+            expect(observerRegistry.observers).toHaveLength(0)
         })
 
         it('allows updating trace details before completion', () => {
@@ -311,7 +268,7 @@ describe('trace-controller', () => {
             signInteractionTrace('button-click', { buttonId: 'submit' })
             signInteractionTrace('button-click', { buttonId: 'submit', validated: true })
 
-            const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+            const loafObserver = observerRegistry.findByType('long-animation-frame')
             loafObserver?.callback(
                 {
                     getEntries: () => [],

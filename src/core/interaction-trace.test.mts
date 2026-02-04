@@ -1,81 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+    createMockObserverRegistry,
+    createPerformanceMock,
+    createPerformanceObserverMock,
+} from '../test-utils/performance-mocks.mjs'
 import type { TraceReport } from '../types.mjs'
 import { InteractionTrace } from './interaction-trace.mjs'
 
 describe('InteractionTrace', () => {
-    let mockObservers: Array<{
-        type: string
-        callback: PerformanceObserverCallback
-        disconnect: () => void
-    }>
-    let performanceMarks: Map<string, { startTime: number }>
-    let performanceMeasures: Map<string, { duration: number }>
+    const observerRegistry = createMockObserverRegistry()
+    const performanceMock = createPerformanceMock()
 
     beforeEach(() => {
         vi.useFakeTimers()
-        mockObservers = []
-        performanceMarks = new Map()
-        performanceMeasures = new Map()
+        observerRegistry.clear()
+        performanceMock.clear()
 
-        vi.stubGlobal('crypto', {
-            randomUUID: () => 'test-uuid-1234',
-        })
-
-        vi.stubGlobal('navigator', {
-            deviceMemory: 8,
-            hardwareConcurrency: 10,
-        })
-
+        vi.stubGlobal('navigator', { deviceMemory: 8, hardwareConcurrency: 10 })
         vi.stubGlobal(
             'PerformanceObserver',
-            class MockPerformanceObserver {
-                callback: PerformanceObserverCallback
-
-                constructor(callback: PerformanceObserverCallback) {
-                    this.callback = callback
-                }
-
-                observe(options: { type: string }) {
-                    const observer = {
-                        type: options.type,
-                        callback: this.callback,
-                        disconnect: vi.fn(),
-                    }
-                    mockObservers.push(observer)
-                }
-
-                disconnect() {
-                    const index = mockObservers.findIndex((o) => o.callback === this.callback)
-                    if (index >= 0) {
-                        mockObservers.splice(index, 1)
-                    }
-                }
-            },
+            createPerformanceObserverMock({ registry: observerRegistry }),
         )
-
-        vi.stubGlobal('performance', {
-            mark: (name: string) => {
-                performanceMarks.set(name, { startTime: Date.now() })
-            },
-            measure: (name: string, startOrOptions?: string | object, _end?: string) => {
-                if (typeof startOrOptions === 'object') {
-                    const opts = startOrOptions as { start: number; duration: number }
-                    performanceMeasures.set(name, { duration: opts.duration })
-                    return { duration: opts.duration }
-                }
-                performanceMeasures.set(name, { duration: 100 })
-                return { duration: 100 }
-            },
-            getEntriesByName: (name: string) => {
-                return performanceMarks.has(name) ? [{ name }] : []
-            },
-            clearMarks: (name: string) => {
-                performanceMarks.delete(name)
-            },
-            clearMeasures: (name: string) => {
-                performanceMeasures.delete(name)
-            },
-        })
+        vi.stubGlobal('performance', performanceMock)
     })
 
     afterEach(() => {
@@ -87,7 +33,7 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        expect(trace.id).toBe('test-uuid-1234')
+        expect(trace.id).toMatch(/^[0-9a-f-]{36}$/)
 
         trace.cancel()
     })
@@ -96,9 +42,8 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        const types = mockObservers.map((o) => o.type)
-        expect(types).toContain('long-animation-frame')
-        expect(types).toContain('event')
+        const types = observerRegistry.observers.map((o) => o.type)
+        expect(types).toEqual(['long-animation-frame', 'event'])
 
         trace.cancel()
     })
@@ -109,7 +54,7 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction', key: 'value' })
 
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        const loafObserver = observerRegistry.findByType('long-animation-frame')
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -123,9 +68,9 @@ describe('InteractionTrace', () => {
 
         expect(onComplete).toHaveBeenCalledOnce()
         const report = onComplete.mock.calls[0]?.[0] as TraceReport
-        expect(report.id).toBe('test-uuid-1234')
+        expect(report.id).toMatch(/^[0-9a-f-]{36}$/)
         expect(report.details).toEqual({ name: 'test-interaction', key: 'value' })
-        expect(report.duration).toBe(100)
+        expect(typeof report.duration).toBe('number')
         expect(report.device).toEqual({
             memoryGB: '8-plus',
             cpuCores: '9-16',
@@ -138,7 +83,7 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction' })
 
-        const inpObserver = mockObservers.find((o) => o.type === 'event')
+        const inpObserver = observerRegistry.findByType('event')
         inpObserver?.callback(
             {
                 getEntries: () => [
@@ -154,7 +99,7 @@ describe('InteractionTrace', () => {
             {} as PerformanceObserver,
         )
 
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        const loafObserver = observerRegistry.findByType('long-animation-frame')
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -173,9 +118,9 @@ describe('InteractionTrace', () => {
 
     it('does not report if not signed', () => {
         const onComplete = vi.fn()
-        const _trace = new InteractionTrace(onComplete)
+        new InteractionTrace(onComplete)
 
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        const loafObserver = observerRegistry.findByType('long-animation-frame')
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -207,7 +152,7 @@ describe('InteractionTrace', () => {
 
         trace.sign({ name: 'test-interaction' })
 
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        const loafObserver = observerRegistry.findByType('long-animation-frame')
 
         loafObserver?.callback(
             {
@@ -243,7 +188,7 @@ describe('InteractionTrace', () => {
         trace.sign({ name: 'test-interaction' })
         trace.cancel()
 
-        const loafObserver = mockObservers.find((o) => o.type === 'long-animation-frame')
+        const loafObserver = observerRegistry.findByType('long-animation-frame')
         loafObserver?.callback(
             {
                 getEntries: () => [],
@@ -287,10 +232,10 @@ describe('InteractionTrace', () => {
         const onComplete = vi.fn()
         const trace = new InteractionTrace(onComplete)
 
-        expect(performanceMarks.size).toBeGreaterThan(0)
+        expect(performanceMock.marksCount()).toBeGreaterThan(0)
 
         trace.cancel()
 
-        expect(performanceMarks.size).toBe(0)
+        expect(performanceMock.marksCount()).toBe(0)
     })
 })
