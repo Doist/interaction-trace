@@ -28,14 +28,15 @@ const cleanup = initInteractionTraceMonitor({
         sampleRate: 10, // 10% of sessions
         isEnabled: () => user.isInternal, // Optional override
     },
+    abortSignal: controller.signal, // Optional: auto-cleanup when aborted
 })
 
-// Call cleanup() when done (e.g., on app unmount)
+// Or call cleanup() manually when done
 ```
 
 ### Sign Traces
 
-Traces are created automatically on `pointerup` events. Use `signInteractionTrace()` to name and provide details for the pending trace from the last click.
+A trace measures the time from a user click to the browser completing all visual updates. Traces are created automatically on `pointerup` events—use `signInteractionTrace()` to name and provide details for the pending trace.
 
 ```typescript
 import { signInteractionTrace } from '@doist/interaction-trace'
@@ -46,24 +47,51 @@ button.addEventListener('click', () => {
 })
 ```
 
+#### TypeScript
+
+Create a pre-typed function for compile-time validation of trace names and details:
+
+```typescript
+import { signInteractionTrace } from '@doist/interaction-trace'
+
+type MyTraces = {
+    'open modal': { modalId: string }
+    'submit form': { formId: string }
+}
+
+const signAppTrace = signInteractionTrace.withTypes<MyTraces>()
+
+signAppTrace('open modal', { modalId: 'settings' })   // ✅ Works
+signAppTrace('opne modal', { modalId: 'settings' })   // ❌ Error: typo caught
+signAppTrace('open modal', { formId: 'x' })           // ❌ Error: wrong details
+```
+
 ### React Integration
 
 ```tsx
-import { useInteractionTrace, InteractionTraceProvider } from '@doist/interaction-trace/react'
+import { useInteractionTrace } from '@doist/interaction-trace/react'
 
-// Hook: Signs trace on component mount
 function SettingsModal() {
     useInteractionTrace('open modal', { modalId: 'settings' })
     return <div>...</div>
 }
+```
 
-// Provider: Adds shared context to all traces
-function App() {
-    return (
-        <InteractionTraceProvider value={{ routeType: 'dashboard' }}>
-            <Dashboard />
-        </InteractionTraceProvider>
-    )
+#### TypeScript
+
+```tsx
+import { useInteractionTrace } from '@doist/interaction-trace/react'
+
+type MyTraces = {
+    'open modal': { modalId: string }
+    'submit form': { formId: string }
+}
+
+const useAppTrace = useInteractionTrace.withTypes<MyTraces>()
+
+function SettingsModal() {
+    useAppTrace('open modal', { modalId: 'settings' })
+    return <div>...</div>
 }
 ```
 
@@ -82,15 +110,13 @@ function App() {
 The reporter receives a `TraceReport` object:
 
 ```typescript
-type TraceReporter = (report: TraceReport) => void | Promise<void>
-
-interface TraceReport {
+type TraceReport = {
     id: string                        // Unique trace ID (crypto.randomUUID())
     duration: number                  // Total LoAF duration (ms)
     inp: number | undefined           // INP value if captured (ms)
     details: {
         name: string                  // Trace name from signInteractionTrace()
-        [key: string]: unknown        // Additional details (merged with context)
+        [key: string]: unknown        // Additional details
     }
     device: {
         memoryGB: string              // Bucketed: "0.25-2", "3-7", "8-plus", or "unknown"
@@ -99,16 +125,9 @@ interface TraceReport {
 }
 ```
 
-## Browser Compatibility
+## Browser Support
 
-| Feature | Support | Fallback |
-|---------|---------|----------|
-| Long Animation Frames (LoAF) | Chrome 123+ | Graceful no-op |
-| Interaction to Next Paint (INP) | Chrome 96+, Edge 96+ | `inp` field undefined |
-| `crypto.randomUUID()` | All modern browsers (Secure Context) | Required |
-| `PerformanceObserver` | All modern browsers | Required |
-
-**SSR/Node.js:** All browser APIs are safely guarded. Functions return no-ops when APIs are unavailable.
+Requires Chrome 123+ for Long Animation Frames and Event Timing APIs. In unsupported browsers, the monitor silently no-ops—your app continues to work normally, just without trace collection.
 
 ## Known Limitations
 
@@ -120,10 +139,7 @@ If your application has significant keyboard usage, consider this when interpret
 
 ## Development
 
-Development requires Node.js >= 22.18.0 (for type stripping by default, see `.node-version` for the pinned version).
-
-> [!NOTE]
-> No `engines` field in package.json—only devDependencies need this version, so consumers won't face version conflicts.
+Development requires Node.js >= 22.18.0 (see `.node-version`).
 
 ```bash
 npm install
