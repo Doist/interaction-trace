@@ -1,15 +1,5 @@
+import type { TraceDefinitions, TraceNames } from '../trace-definitions.mjs'
 import type { InteractionTraceConfig, TraceDetails, TraceReporter } from '../types.mjs'
-
-/**
- * Map of trace names to their additional detail shapes.
- * Consumers define this to constrain valid trace names.
- */
-type TraceDefinitions = Record<string, Record<string, unknown>>
-
-/**
- * Extract valid trace names from a definitions type.
- */
-type TraceNames<TDefs extends TraceDefinitions> = keyof TDefs & string
 
 /**
  * A pre-typed signInteractionTrace function bound to specific TraceDefinitions.
@@ -145,7 +135,7 @@ export function initInteractionTraceMonitor<TDetails extends TraceDetails = Trac
  * signInteractionTrace<MyTraces>('open modal', { modalId: 'settings' })
  *
  * @example
- * // Legacy/simple usage (any string)
+ * // Untyped usage (any string)
  * signInteractionTrace('any trace name', { anyKey: 'anyValue' })
  *
  * @example

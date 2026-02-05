@@ -43,6 +43,7 @@ describe('trace-controller', () => {
         // Reset before switching timers or unstubbing (cancel() needs performance.clearMarks)
         resetController()
         resetFeatureDetection()
+        vi.runOnlyPendingTimers()
         vi.useRealTimers()
         vi.unstubAllGlobals()
     })
@@ -230,7 +231,7 @@ describe('trace-controller', () => {
                 expect(true).toBe(true)
             })
 
-            it('legacy usage accepts any string (no type checking)', () => {
+            it('untyped usage accepts any string (no type checking)', () => {
                 signInteractionTrace('any trace name', { anyKey: 'anyValue' })
                 signInteractionTrace('another-trace', { foo: 123, bar: true })
                 signInteractionTrace('just-a-name')
