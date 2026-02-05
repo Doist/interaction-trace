@@ -1,0 +1,44 @@
+name: Release Please
+
+on:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: write
+    pull-requests: write
+    actions: write
+
+jobs:
+    release-please:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: googleapis/release-please-action@v4
+              id: release
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  target-branch: main
+                  config-file: .github/release-please-config.json
+                  manifest-file: .github/release-please-manifest.json
+
+            - name: Trigger deployment workflows
+              if: ${{ steps.release.outputs.release_created }}
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const repo = context.repo.repo;
+                      const owner = context.repo.owner;
+
+                      async function triggerWorkflow(workflow_id) {
+                        console.log(`Triggering workflow: ${workflow_id}`);
+                        await github.rest.actions.createWorkflowDispatch({
+                          owner: owner,
+                          repo: repo,
+                          workflow_id: workflow_id,
+                          ref: 'main'
+                        });
+                        console.log(`Successfully triggered ${workflow_id}`);
+                      }
+
+                      await triggerWorkflow('publish.yml');
