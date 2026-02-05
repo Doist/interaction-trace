@@ -1,5 +1,5 @@
-import type { TraceDefinitions, TraceNames } from '../trace-definitions.mjs'
-import type { InteractionTraceConfig, TraceDetails, TraceReporter } from '../types.mjs'
+import type { TraceDefinitions, TraceNames } from '../trace-definitions'
+import type { InteractionTraceConfig, TraceDetails, TraceReporter } from '../types'
 
 /**
  * A pre-typed signInteractionTrace function bound to specific TraceDefinitions.
@@ -9,8 +9,8 @@ type TypedSignInteractionTrace<TDefs extends TraceDefinitions> = <TName extends 
     details?: TDefs[TName],
 ) => void
 
-import { isBrowserSupported } from './feature-detection.mjs'
-import { InteractionTrace } from './interaction-trace.mjs'
+import { isBrowserSupported } from './feature-detection'
+import { InteractionTrace } from './interaction-trace'
 
 const DEFAULT_PERSIST_KEY = 'interaction-trace-enrolled'
 const DEFAULT_SAMPLE_RATE = 100

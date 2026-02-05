@@ -5,12 +5,12 @@
     "type": "module",
     "exports": {
         ".": {
-            "types": "./dist/index.d.mts",
-            "import": "./dist/index.mjs"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
         },
         "./react": {
-            "types": "./dist/react/index.d.mts",
-            "import": "./dist/react/index.mjs"
+            "types": "./dist/react/index.d.ts",
+            "import": "./dist/react/index.js"
         }
     },
     "sideEffects": false,

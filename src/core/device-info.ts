@@ -1,5 +1,5 @@
-import type { DeviceInfo } from '../types.mjs'
-import { getCpuCoresBucket, getMemoryBucket } from '../utils/size-buckets.mjs'
+import type { DeviceInfo } from '../types'
+import { getCpuCoresBucket, getMemoryBucket } from '../utils/size-buckets'
 
 /**
  * Collects device capability information.

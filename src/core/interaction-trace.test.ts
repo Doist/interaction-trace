@@ -3,9 +3,9 @@ import {
     createMockObserverRegistry,
     createPerformanceMock,
     createPerformanceObserverMock,
-} from '../test-utils/performance-mocks.mjs'
-import type { TraceReport } from '../types.mjs'
-import { InteractionTrace } from './interaction-trace.mjs'
+} from '../test-utils/performance-mocks'
+import type { TraceReport } from '../types'
+import { InteractionTrace } from './interaction-trace'
 
 describe('InteractionTrace', () => {
     const observerRegistry = createMockObserverRegistry()
