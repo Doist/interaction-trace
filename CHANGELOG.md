@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.0.0...interaction-trace-v1.1.0) (2026-02-06)
+
+
+### Features
+
+* allow isEnabled() to return undefined to defer to sampleRate ([#26](https://github.com/Doist/interaction-trace/issues/26)) ([7691707](https://github.com/Doist/interaction-trace/commit/7691707d2defb39a050c7228d180c5d26988d967))
+
 ## 1.0.0 (2026-02-06)
 
 
