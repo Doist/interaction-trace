@@ -147,6 +147,12 @@ npm run build
 npm test
 ```
 
+## Releasing
+
+This project uses [release-please](https://github.com/googleapis/release-please) to automate releases. Commits merged to `main` with `fix:` trigger patch releases, `feat:` triggers minor releases, and `feat!:` or `fix!:` triggers major releases.
+
+When commits land on `main`, release-please creates a release PR. Merging it publishes to npm and GitHub Packages.
+
 ## License
 
 Released under the [MIT License](https://opensource.org/licenses/MIT).

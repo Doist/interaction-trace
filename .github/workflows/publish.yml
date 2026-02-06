@@ -1,0 +1,59 @@
+name: Publish @doist/interaction-trace package
+
+on:
+    workflow_dispatch:
+
+permissions:
+    id-token: write
+    packages: write
+    contents: read
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v5
+
+            - name: Prepare Node.js environment
+              uses: actions/setup-node@v6
+              with:
+                  cache: npm
+                  node-version-file: .node-version
+
+            - name: Ensure npm 11.5.1 or later is installed
+              run: npm install -g npm@latest
+
+            - name: Install project npm dependencies
+              run: npm ci
+
+            - run: npm run check
+            - run: npm run test
+            - run: npm run build
+
+            # The Node.js environment is prepared based on the `.npmrc` file in the repo, which
+            # configures Doist scoped packages to use the public npm registry with OIDC
+            # authentication for the initial publish, after which we remove the Doist registry
+            # configuration, and prepare the Node.js environment for the GitHub Packages registry,
+            # providing a predictable release workflow for both registries.
+
+            - name: Publish package to public npm registry
+              run: npm publish
+
+            - name: Remove Doist registry configuration from `.npmrc`
+              run: npm config delete @doist:registry --location=project
+
+            - name: Prepare Node.js environment for GitHub Packages registry
+              uses: actions/setup-node@v6
+              with:
+                  cache: npm
+                  node-version-file: .node-version
+                  registry-url: https://npm.pkg.github.com/
+                  scope: '@doist'
+
+            - name: Publish package to GitHub Packages registry
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
