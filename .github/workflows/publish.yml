@@ -33,6 +33,12 @@ jobs:
             - run: npm run test
             - run: npm run build
 
+            # The Node.js environment is prepared based on the `.npmrc` file in the repo, which
+            # configures Doist scoped packages to use the public npm registry with OIDC
+            # authentication for the initial publish, after which we remove the Doist registry
+            # configuration, and prepare the Node.js environment for the GitHub Packages registry,
+            # providing a predictable release workflow for both registries.
+
             - name: Publish package to public npm registry
               run: npm publish
 
