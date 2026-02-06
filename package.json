@@ -3,14 +3,25 @@
     "version": "0.0.0",
     "description": "A performance monitoring library for tracking the time from user interactions to next paint (INP) and last long-animation frame (LoAF), with declarative trace signing and third-party reporting.",
     "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
         },
         "./react": {
             "types": "./dist/react/index.d.ts",
-            "import": "./dist/react/index.js"
+            "import": "./dist/react/index.js",
+            "default": "./dist/react/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "react": [
+                "dist/react/index.d.ts"
+            ]
         }
     },
     "sideEffects": false,
