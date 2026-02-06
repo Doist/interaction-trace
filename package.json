@@ -1,6 +1,6 @@
 {
     "name": "@doist/interaction-trace",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "description": "A performance monitoring library for tracking the time from user interactions to next paint (INP) and last long-animation frame (LoAF), with declarative trace signing and third-party reporting.",
     "type": "module",
     "main": "./dist/index.js",
