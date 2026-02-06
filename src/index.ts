@@ -1,4 +1,4 @@
-export { initInteractionTraceMonitor, signInteractionTrace } from './core/trace-controller.mjs'
+export { initInteractionTraceMonitor, signInteractionTrace } from './core/trace-controller'
 
 export type {
     CpuCoresBucket,
@@ -9,4 +9,4 @@ export type {
     TraceDetails,
     TraceReport,
     TraceReporter,
-} from './types.mjs'
+} from './types'

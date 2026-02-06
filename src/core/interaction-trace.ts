@@ -1,5 +1,5 @@
-import type { TraceDetails, TraceReport, TraceReporter } from '../types.mjs'
-import { getDeviceInfo } from './device-info.mjs'
+import type { TraceDetails, TraceReport, TraceReporter } from '../types'
+import { getDeviceInfo } from './device-info'
 
 const MEASURE_NAME = 'interaction-trace-measure'
 const MARK_START_NAME = `${MEASURE_NAME}-start`

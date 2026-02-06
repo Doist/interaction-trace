@@ -1,13 +1,13 @@
 import { renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { resetFeatureDetection } from '../core/feature-detection.mjs'
-import * as traceController from '../core/trace-controller.mjs'
+import { resetFeatureDetection } from '../core/feature-detection'
+import * as traceController from '../core/trace-controller'
 import {
     createMockObserverRegistry,
     createPerformanceMock,
     createPerformanceObserverMock,
-} from '../test-utils/performance-mocks.mjs'
-import { useInteractionTrace } from './use-interaction-trace.mjs'
+} from '../test-utils/performance-mocks'
+import { useInteractionTrace } from './use-interaction-trace'
 
 describe('useInteractionTrace', () => {
     const observerRegistry = createMockObserverRegistry()

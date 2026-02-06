@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { signInteractionTrace } from '../core/trace-controller.mjs'
-import type { TraceDefinitions, TraceNames } from '../trace-definitions.mjs'
+import { signInteractionTrace } from '../core/trace-controller'
+import type { TraceDefinitions, TraceNames } from '../trace-definitions'
 
 type TypedUseInteractionTrace<TDefs extends TraceDefinitions> = <TName extends TraceNames<TDefs>>(
     name: TName,

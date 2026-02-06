@@ -1,4 +1,4 @@
-import type { CpuCoresBucket, MemoryBucket } from '../types.mjs'
+import type { CpuCoresBucket, MemoryBucket } from '../types'
 
 /**
  * Returns the memory bucket based on navigator.deviceMemory.

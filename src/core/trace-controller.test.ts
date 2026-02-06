@@ -3,14 +3,14 @@ import {
     createMockObserverRegistry,
     createPerformanceMock,
     createPerformanceObserverMock,
-} from '../test-utils/performance-mocks.mjs'
-import { resetFeatureDetection } from './feature-detection.mjs'
+} from '../test-utils/performance-mocks'
+import { resetFeatureDetection } from './feature-detection'
 import {
     initInteractionTraceMonitor,
     isMonitorActive,
     resetController,
     signInteractionTrace,
-} from './trace-controller.mjs'
+} from './trace-controller'
 
 describe('trace-controller', () => {
     const observerRegistry = createMockObserverRegistry()
