@@ -6,5 +6,6 @@ export default defineConfig({
         include: ['src/**/*.test.{ts,tsx}'],
         watchExclude: ['node_modules', 'dist'],
         passWithNoTests: true,
+        restoreMocks: true,
     },
 })

@@ -94,8 +94,6 @@ describe('trace-controller', () => {
             )
             cleanup2()
             expect(isMonitorActive()).toBe(true)
-
-            consoleWarnSpy.mockRestore()
         })
     })
 
