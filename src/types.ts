@@ -61,8 +61,13 @@ export type EnrollmentConfig = {
     sampleRate?: number
     /** sessionStorage key for enrollment state. Default: 'interaction-trace-enrolled' */
     persistKey?: string
-    /** Override function - takes precedence over sampleRate if provided */
-    isEnabled?: () => boolean
+    /**
+     * Override function for enrollment.
+     * - `true` — force enable (skip sampling)
+     * - `false` — force disable (skip sampling)
+     * - `undefined` — defer to `sampleRate`
+     */
+    isEnabled?: () => boolean | undefined
 }
 
 /**

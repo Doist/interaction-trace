@@ -94,8 +94,6 @@ describe('trace-controller', () => {
             )
             cleanup2()
             expect(isMonitorActive()).toBe(true)
-
-            consoleWarnSpy.mockRestore()
         })
     })
 
@@ -136,6 +134,34 @@ describe('trace-controller', () => {
                 enrollment: {
                     sampleRate: 0,
                     isEnabled: () => true,
+                },
+            })
+
+            expect(isMonitorActive()).toBe(true)
+        })
+
+        it('force disables when isEnabled returns false', () => {
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({
+                reporter,
+                enrollment: {
+                    sampleRate: 100,
+                    isEnabled: () => false,
+                },
+            })
+
+            expect(isMonitorActive()).toBe(false)
+        })
+
+        it('falls back to sampleRate when isEnabled returns undefined', () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0.05)
+
+            const reporter = vi.fn()
+            initInteractionTraceMonitor({
+                reporter,
+                enrollment: {
+                    sampleRate: 10,
+                    isEnabled: () => undefined,
                 },
             })
 

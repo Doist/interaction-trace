@@ -186,7 +186,10 @@ signInteractionTrace.withTypes = function withTypes<
 
 function checkEnrollment(config: InteractionTraceConfig['enrollment']): boolean {
     if (config?.isEnabled) {
-        return config.isEnabled()
+        const result = config.isEnabled()
+        if (result !== undefined) {
+            return result
+        }
     }
 
     const sampleRate = config?.sampleRate ?? DEFAULT_SAMPLE_RATE

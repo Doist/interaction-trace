@@ -26,7 +26,10 @@ const cleanup = initInteractionTraceMonitor({
     },
     enrollment: {
         sampleRate: 10, // 10% of sessions
-        isEnabled: () => user.isInternal, // Optional override
+        isEnabled: () => {
+            if (user.isInternal) return true    // force enable for internal users
+            return undefined                     // everyone else: use sampleRate
+        },
     },
     abortSignal: controller.signal, // Optional: auto-cleanup when aborted
 })
@@ -103,7 +106,7 @@ function SettingsModal() {
 |--------|------|-------------|
 | `sampleRate` | `number` | Percentage of sessions to enroll (0-100) |
 | `persistKey` | `string` | sessionStorage key for enrollment state. Default: `'interaction-trace-enrolled'` |
-| `isEnabled` | `() => boolean` | Override function (takes precedence over sampleRate) |
+| `isEnabled` | `() => boolean \| undefined` | Override function. `true`/`false` override sampling, `undefined` defers to `sampleRate` |
 
 ### Reporter Interface
 
