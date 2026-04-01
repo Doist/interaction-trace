@@ -152,9 +152,11 @@ npm test
 
 ## Releasing
 
-This project uses [release-please](https://github.com/googleapis/release-please) to automate releases. Commits merged to `main` with `fix:` trigger patch releases, `feat:` triggers minor releases, and `feat!:` or `fix!:` triggers major releases.
+This project uses [`semantic-release`](https://github.com/semantic-release/semantic-release) for fully automated releases. When commits following the [Conventional Commits](https://www.conventionalcommits.org/) specification are pushed to `main`, semantic-release automatically determines the next version, updates the changelog, publishes to npm and GitHub Packages, and creates a GitHub release.
 
-When commits land on `main`, release-please creates a release PR. Merging it publishes to npm and GitHub Packages.
+- `fix:` commits trigger a **patch** release
+- `feat:` commits trigger a **minor** release
+- `feat!:` or `fix!:` commits (or commits with a `BREAKING CHANGE:` footer) trigger a **major** release
 
 ## License
 

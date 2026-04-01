@@ -59,7 +59,7 @@ After cloning interaction-trace and installing all dependencies, several command
 
 ### Release Process (core team only)
 
-The release process for interaction-trace is automated with [release-please](https://github.com/googleapis/release-please). When commits following the [Conventional Commits](https://www.conventionalcommits.org/) specification are merged to `main`, release-please automatically creates or updates a release PR. When that PR is merged, a new version is published to npm.
+The release process for interaction-trace is fully automated with [`semantic-release`](https://github.com/semantic-release/semantic-release). Pushing to `main` (after CI passes) triggers a stable release automatically: semantic-release analyzes commits since the last release, determines the version bump, updates the changelog, publishes to npm and GitHub Packages, and creates a GitHub release.
 
 ## Sending a Pull Request
 
