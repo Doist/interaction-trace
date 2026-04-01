@@ -1,6 +1,8 @@
 name: Check pull request health
 
-on: pull_request
+on:
+    pull_request:
+    workflow_call:
 
 jobs:
     build-and-test:
@@ -8,7 +10,7 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
 
             - name: Prepare Node.js environment
               uses: actions/setup-node@v6
