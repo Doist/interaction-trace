@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.1.0...interaction-trace-v1.1.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* **security:** replace npx with npm exec in pre-commit hook ([#79](https://github.com/Doist/interaction-trace/issues/79)) ([09d513e](https://github.com/Doist/interaction-trace/commit/09d513ea840958af9c68fa1687715da73b623af9))
+
 ## [1.1.0](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.0.0...interaction-trace-v1.1.0) (2026-02-06)
 
 
