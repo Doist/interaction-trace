@@ -3,6 +3,9 @@
     "schedule": ["before 7am every weekday"],
     "updateNotScheduled": false,
     "reviewers": ["team:frontend-product"],
+    "constraints": {
+        "node": "22.22.1"
+    },
     "prBodyNotes": [
         "## Reference\n",
         " - See [Keeping dependencies up-to-date](https://handbook.doist.com/doc/keeping-dependencies-up-to-date-Qf28E929N5) for reviewing guidelines."
