@@ -77,7 +77,7 @@
         "@types/react": "19.2.15",
         "happy-dom": "20.9.0",
         "husky": "9.1.7",
-        "lint-staged": "17.0.5",
+        "lint-staged": "17.0.6",
         "npm-run-all2": "8.0.4",
         "react": "19.2.6",
         "react-dom": "19.2.6",
