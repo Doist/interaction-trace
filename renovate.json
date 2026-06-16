@@ -4,7 +4,7 @@
     "updateNotScheduled": false,
     "reviewers": ["team:frontend-product"],
     "constraints": {
-        "node": "22.22.1"
+        "node": "22.22.2"
     },
     "prBodyNotes": [
         "## Reference\n",
