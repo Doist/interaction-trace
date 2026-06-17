@@ -142,7 +142,7 @@ If your application has significant keyboard usage, consider this when interpret
 
 ## Development
 
-Development requires Node.js >= 22.22.2 (see `.node-version`).
+Development uses the exact Node.js version pinned in `.node-version` (currently 22.22.2). Other versions may fail `npm install` because of `engine-strict`.
 
 ```bash
 npm install
