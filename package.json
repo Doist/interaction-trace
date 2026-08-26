@@ -75,7 +75,7 @@
         "@testing-library/react": "16.3.2",
         "@types/node": "25.9.5",
         "@types/react": "19.2.18",
-        "happy-dom": "20.11.2",
+        "happy-dom": "20.11.6",
         "husky": "9.1.7",
         "lint-staged": "17.3.0",
         "npm-run-all2": "9.0.3",
