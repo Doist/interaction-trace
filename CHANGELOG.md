@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.1.2...interaction-trace-v1.1.3) (2026-09-30)
+
+
+### Bug Fixes
+
+* Update Help Center links to canonical paths ([#200](https://github.com/Doist/interaction-trace/issues/200)) ([eea4007](https://github.com/Doist/interaction-trace/commit/eea40073c1be08c431bb7268dde6616f36bd10a7))
+
 ## [1.1.2](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.1.1...interaction-trace-v1.1.2) (2026-04-04)
 
 
