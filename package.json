@@ -78,7 +78,7 @@
         "happy-dom": "21.0.4",
         "husky": "9.1.7",
         "lint-staged": "17.6.0",
-        "npm-run-all2": "9.0.3",
+        "npm-run-all2": "9.0.4",
         "react": "19.3.1",
         "react-dom": "19.3.1",
         "rimraf": "6.1.3",
