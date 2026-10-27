@@ -71,7 +71,7 @@
         "@biomejs/biome": "2.5.15",
         "@doist/tsconfig": "2.0.1",
         "@rollup/plugin-node-resolve": "16.0.3",
-        "@rollup/plugin-typescript": "12.3.0",
+        "@rollup/plugin-typescript": "12.3.1",
         "@testing-library/react": "16.3.3",
         "@types/node": "25.9.9",
         "@types/react": "19.3.0",
