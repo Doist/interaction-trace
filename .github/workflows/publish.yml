@@ -51,7 +51,7 @@ jobs:
                   cache: npm
                   node-version-file: .node-version
                   registry-url: https://npm.pkg.github.com/
-                  scope: '@doist'
+                  scope: "@doist"
 
             - name: Publish package to GitHub Packages registry
               run: npm publish

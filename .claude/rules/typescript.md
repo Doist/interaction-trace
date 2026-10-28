@@ -1,9 +1,11 @@
 ---
+
 paths:
-  - "**/*.ts"
-  - "**/*.ts"
-  - "**/*.mts"
-  - "**/*.tsx"
+- "**/*.ts"
+- "**/*.ts"
+- "**/*.mts"
+- "**/*.tsx"
+
 ---
 
 # TypeScript Guidelines
@@ -57,29 +59,25 @@ Follow these TypeScript best practices when writing code to ensure type safety a
 
 ```typescript
 interface Task {
-  id: string;
-  content: string;
-  isCompleted: boolean;
-  dueDate?: Date;
-  labels: string[];
+    id: string
+    content: string
+    isCompleted: boolean
+    dueDate?: Date
+    labels: string[]
 }
 
 type TaskAction =
-  | { type: 'ADD_TASK'; payload: Omit<Task, 'id'> }
-  | { type: 'COMPLETE_TASK'; payload: string }
-  | { type: 'DELETE_TASK'; payload: string }
-  | { type: 'UPDATE_TASK'; payload: { id: string; content: string } };
+    | { type: 'ADD_TASK'; payload: Omit<Task, 'id'> }
+    | { type: 'COMPLETE_TASK'; payload: string }
+    | { type: 'DELETE_TASK'; payload: string }
+    | { type: 'UPDATE_TASK'; payload: { id: string; content: string } }
 ```
 
 ### Good: Generic function
 
 ```typescript
-function filterItems<T, K extends keyof T>(
-  items: T[],
-  property: K,
-  value: T[K]
-): T[] {
-  return items.filter(item => item[property] === value);
+function filterItems<T, K extends keyof T>(items: T[], property: K, value: T[K]): T[] {
+    return items.filter((item) => item[property] === value)
 }
 ```
 
@@ -87,13 +85,13 @@ function filterItems<T, K extends keyof T>(
 
 ```typescript
 function isTask(value: unknown): value is Task {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    'content' in value &&
-    'isCompleted' in value
-  );
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'id' in value &&
+        'content' in value &&
+        'isCompleted' in value
+    )
 }
 ```
 
@@ -101,9 +99,9 @@ function isTask(value: unknown): value is Task {
 
 ```typescript
 interface UserSettings {
-  readonly id: string;
-  theme: 'light' | 'dark';
-  notifications: boolean;
+    readonly id: string
+    theme: 'light' | 'dark'
+    notifications: boolean
 }
 ```
 
@@ -112,7 +110,7 @@ interface UserSettings {
 ```typescript
 // Don't do this
 function processData(data: any) {
-  return data.map(item => item.value);
+    return data.map((item) => item.value)
 }
 ```
 
@@ -121,7 +119,7 @@ function processData(data: any) {
 ```typescript
 // Don't do this
 function calculateTotal(items) {
-  return items.reduce((total, item) => total + item.price, 0);
+    return items.reduce((total, item) => total + item.price, 0)
 }
 ```
 
@@ -130,12 +128,12 @@ function calculateTotal(items) {
 ```typescript
 // Don't do this - use interface for extensible objects
 type User = {
-  id: string;
-  name: string;
+    id: string
+    name: string
 }
 
 type AdminUser = User & {
-  permissions: string[];
+    permissions: string[]
 }
 ```
 
@@ -144,7 +142,7 @@ type AdminUser = User & {
 ```typescript
 // Don't do this - use discriminated unions
 type Action = {
-  type: string;
-  payload: any;
+    type: string
+    payload: any
 }
 ```
