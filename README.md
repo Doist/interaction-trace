@@ -27,8 +27,8 @@ const cleanup = initInteractionTraceMonitor({
     enrollment: {
         sampleRate: 10, // 10% of sessions
         isEnabled: () => {
-            if (user.isInternal) return true    // force enable for internal users
-            return undefined                     // everyone else: use sampleRate
+            if (user.isInternal) return true // force enable for internal users
+            return undefined // everyone else: use sampleRate
         },
     },
     abortSignal: controller.signal, // Optional: auto-cleanup when aborted
@@ -64,9 +64,9 @@ type MyTraces = {
 
 const signAppTrace = signInteractionTrace.withTypes<MyTraces>()
 
-signAppTrace('open modal', { modalId: 'settings' })   // ✅ Works
-signAppTrace('opne modal', { modalId: 'settings' })   // ❌ Error: typo caught
-signAppTrace('open modal', { formId: 'x' })           // ❌ Error: wrong details
+signAppTrace('open modal', { modalId: 'settings' }) // ✅ Works
+signAppTrace('opne modal', { modalId: 'settings' }) // ❌ Error: typo caught
+signAppTrace('open modal', { formId: 'x' }) // ❌ Error: wrong details
 ```
 
 ### React Integration
@@ -102,11 +102,11 @@ function SettingsModal() {
 
 ### Enrollment Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `sampleRate` | `number` | Percentage of sessions to enroll (0-100) |
-| `persistKey` | `string` | sessionStorage key for enrollment state. Default: `'interaction-trace-enrolled'` |
-| `isEnabled` | `() => boolean \| undefined` | Override function. `true`/`false` override sampling, `undefined` defers to `sampleRate` |
+| Option       | Type                         | Description                                                                             |
+| ------------ | ---------------------------- | --------------------------------------------------------------------------------------- |
+| `sampleRate` | `number`                     | Percentage of sessions to enroll (0-100)                                                |
+| `persistKey` | `string`                     | sessionStorage key for enrollment state. Default: `'interaction-trace-enrolled'`        |
+| `isEnabled`  | `() => boolean \| undefined` | Override function. `true`/`false` override sampling, `undefined` defers to `sampleRate` |
 
 ### Reporter Interface
 
@@ -114,16 +114,16 @@ The reporter receives a `TraceReport` object:
 
 ```typescript
 type TraceReport = {
-    id: string                        // Unique trace ID (crypto.randomUUID())
-    duration: number                  // Total LoAF duration (ms)
-    inp: number | undefined           // INP value if captured (ms)
+    id: string // Unique trace ID (crypto.randomUUID())
+    duration: number // Total LoAF duration (ms)
+    inp: number | undefined // INP value if captured (ms)
     details: {
-        name: string                  // Trace name from signInteractionTrace()
-        [key: string]: unknown        // Additional details
+        name: string // Trace name from signInteractionTrace()
+        [key: string]: unknown // Additional details
     }
     device: {
-        memoryGB: string              // Bucketed: "0.25-2", "3-7", "8-plus", or "unknown"
-        cpuCores: string              // Bucketed: "1-8", "9-16", "17-plus"
+        memoryGB: string // Bucketed: "0.25-2", "3-7", "8-plus", or "unknown"
+        cpuCores: string // Bucketed: "1-8", "9-16", "17-plus"
     }
 }
 ```
