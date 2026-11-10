@@ -1,5 +1,5 @@
 {
-    "extends": ["github>doist/renovate-config:frontend-base"],
+    "extends": ["github>todoist/renovate-config:frontend-base"],
     "schedule": ["before 7am every weekday"],
     "updateNotScheduled": false,
     "reviewers": ["team:frontend-product"],

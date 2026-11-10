@@ -1,6 +1,7 @@
 {
-    "extends": "@doist/tsconfig",
+    "extends": "@todoist/tsconfig",
     "compilerOptions": {
+        "rootDir": "./src",
         "target": "ES2022",
         "module": "ESNext",
         "moduleResolution": "bundler",

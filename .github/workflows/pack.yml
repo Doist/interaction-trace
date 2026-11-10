@@ -1,0 +1,46 @@
+name: Build and pack interaction-trace (no publication)
+
+on:
+    # Release Please dispatches the exact release tag; maintainers may retry it.
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    pack:
+        if: github.repository == 'todoist/interaction-trace' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/interaction-trace-v'))
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+            - uses: actions/setup-node@v6
+              with:
+                  node-version-file: .node-version
+                  cache: npm
+            - name: Require a reviewed normal release commit
+              run: node .github/scripts/release-source.mjs pack
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - run: npm install --global npm@11.21.2 --ignore-scripts
+            - run: npm ci --ignore-scripts --no-audit --no-fund
+            - run: npm run check
+            - run: npm test
+            - run: npm run build
+            - run: node --test .github/scripts/*.test.mjs
+            - name: Pack the checked build once, with no lifecycles
+              id: package
+              env:
+                  RELEASE_DIR: ${{ runner.temp }}/interaction-trace-release
+              run: |
+                  node .github/scripts/release.mjs pack "$RELEASE_DIR" "$GITHUB_SHA" "$GITHUB_REF"
+                  node -p "'version=' + require('./package.json').version" >> "$GITHUB_OUTPUT"
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: interaction-trace-${{ steps.package.outputs.version }}
+                  path: ${{ runner.temp }}/interaction-trace-release/
+                  if-no-files-found: error
+                  retention-days: 90

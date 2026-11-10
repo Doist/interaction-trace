@@ -1,15 +1,15 @@
-# @doist/interaction-trace
+# @todoist/interaction-trace
 
-[![npm version](https://img.shields.io/npm/v/@doist/interaction-trace)](https://www.npmjs.com/package/@doist/interaction-trace)
+[![npm version](https://img.shields.io/npm/v/@todoist/interaction-trace)](https://www.npmjs.com/package/@todoist/interaction-trace)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/node/v/@doist/interaction-trace)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/node/v/@todoist/interaction-trace)](https://nodejs.org/)
 
 A performance monitoring library for tracking user interactions using [Interaction to Next Paint (INP)](https://web.dev/articles/inp) and [Long Animation Frames (LoAF)](https://web.dev/articles/long-animation-frames). Features declarative trace signing and pluggable reporting.
 
 ## Installation
 
 ```bash
-npm install @doist/interaction-trace
+npm install @todoist/interaction-trace
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ npm install @doist/interaction-trace
 ### Initialize the Monitor
 
 ```typescript
-import { initInteractionTraceMonitor } from '@doist/interaction-trace'
+import { initInteractionTraceMonitor } from '@todoist/interaction-trace'
 
 const cleanup = initInteractionTraceMonitor({
     reporter: (report) => {
@@ -42,7 +42,7 @@ const cleanup = initInteractionTraceMonitor({
 A trace measures the time from a user click to the browser completing all visual updates. Traces are created automatically on `pointerup` events—use `signInteractionTrace()` to name and provide details for the pending trace.
 
 ```typescript
-import { signInteractionTrace } from '@doist/interaction-trace'
+import { signInteractionTrace } from '@todoist/interaction-trace'
 
 button.addEventListener('click', () => {
     signInteractionTrace('open modal', { modalId: 'settings' })
@@ -55,7 +55,7 @@ button.addEventListener('click', () => {
 Create a pre-typed function for compile-time validation of trace names and details:
 
 ```typescript
-import { signInteractionTrace } from '@doist/interaction-trace'
+import { signInteractionTrace } from '@todoist/interaction-trace'
 
 type MyTraces = {
     'open modal': { modalId: string }
@@ -72,7 +72,7 @@ signAppTrace('open modal', { formId: 'x' }) // ❌ Error: wrong details
 ### React Integration
 
 ```tsx
-import { useInteractionTrace } from '@doist/interaction-trace/react'
+import { useInteractionTrace } from '@todoist/interaction-trace/react'
 
 function SettingsModal() {
     useInteractionTrace('open modal', { modalId: 'settings' })
@@ -83,7 +83,7 @@ function SettingsModal() {
 #### TypeScript
 
 ```tsx
-import { useInteractionTrace } from '@doist/interaction-trace/react'
+import { useInteractionTrace } from '@todoist/interaction-trace/react'
 
 type MyTraces = {
     'open modal': { modalId: string }
@@ -154,7 +154,7 @@ npm test
 
 This project uses [release-please](https://github.com/googleapis/release-please) to automate releases. Commits merged to `main` with `fix:` trigger patch releases, `feat:` triggers minor releases, and `feat!:` or `fix!:` triggers major releases.
 
-When commits land on `main`, release-please creates a release PR. Merging it publishes to npm and GitHub Packages.
+When commits land on `main`, release-please creates a release PR. Merging it creates the normal release record and retains a checked package artifact. An authorized maintainer then publishes that same artifact to npm and GitHub Packages through the explicit publication workflow. See [the release runbook](docs/releasing.md) for first publication and retry instructions.
 
 ## License
 
