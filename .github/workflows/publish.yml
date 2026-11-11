@@ -1,59 +1,97 @@
-name: Publish @doist/interaction-trace package
+name: Publish retained interaction-trace artifact
 
 on:
     workflow_dispatch:
+        inputs:
+            source_run_id:
+                description: Successful pack.yml run containing the reviewed tarball
+                required: true
+                type: string
+            version:
+                description: Exact stable version in the retained artifact (intended migration release 1.1.4)
+                required: true
+                type: string
+            destination:
+                description: Use github after manual npm bootstrap; both for future OIDC releases
+                required: true
+                default: both
+                type: choice
+                options: [both, npm, github]
+            dist_tag:
+                description: Use recovery for an older missing version without moving latest
+                required: true
+                default: latest
+                type: choice
+                options: [latest, recovery]
 
 permissions:
-    id-token: write
-    packages: write
     contents: read
+
+concurrency:
+    group: interaction-trace-publication
+    cancel-in-progress: false
 
 jobs:
     publish:
+        if: github.repository == 'todoist/interaction-trace' && github.ref == 'refs/heads/main'
         runs-on: ubuntu-latest
-        timeout-minutes: 10
-
+        timeout-minutes: 15
+        environment: package-release
+        permissions:
+            contents: read
+            actions: read
+            id-token: write
+            packages: write
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v5
-
-            - name: Prepare Node.js environment
-              uses: actions/setup-node@v6
+            - uses: actions/checkout@v5
               with:
-                  cache: npm
-                  node-version-file: .node-version
-
-            - name: Ensure npm 11.5.1 or later is installed
-              run: npm install -g npm@latest
-
-            - name: Install project npm dependencies
-              run: npm ci
-
-            - run: npm run check
-            - run: npm run test
-            - run: npm run build
-
-            # The Node.js environment is prepared based on the `.npmrc` file in the repo, which
-            # configures Doist scoped packages to use the public npm registry with OIDC
-            # authentication for the initial publish, after which we remove the Doist registry
-            # configuration, and prepare the Node.js environment for the GitHub Packages registry,
-            # providing a predictable release workflow for both registries.
-
-            - name: Publish package to public npm registry
-              run: npm publish
-
-            - name: Remove Doist registry configuration from `.npmrc`
-              run: npm config delete @doist:registry --location=project
-
-            - name: Prepare Node.js environment for GitHub Packages registry
-              uses: actions/setup-node@v6
+                  persist-credentials: false
+            - uses: actions/setup-node@v6
               with:
-                  cache: npm
                   node-version-file: .node-version
-                  registry-url: https://npm.pkg.github.com/
-                  scope: "@doist"
-
-            - name: Publish package to GitHub Packages registry
-              run: npm publish
+            - run: npm install --global npm@11.21.2 --ignore-scripts
+            - name: Validate source run, exact tag commit and reviewed ancestry
+              id: source
+              run: node .github/scripts/release-source.mjs run
               env:
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - uses: actions/download-artifact@v4
+              with:
+                  name: interaction-trace-${{ inputs.version }}
+                  path: ${{ runner.temp }}/interaction-trace-release
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  run-id: ${{ inputs.source_run_id }}
+            - name: Verify artifact before publication
+              env:
+                  RELEASE_DIR: ${{ runner.temp }}/interaction-trace-release
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SOURCE_SHA: ${{ steps.source.outputs.sha }}
+                  SOURCE_REF: ${{ steps.source.outputs.ref }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+              run: node .github/scripts/release.mjs verify "$RELEASE_DIR" "$SOURCE_SHA" "$RELEASE_VERSION" "$SOURCE_REF"
+            - name: Publish or verify npm copy through OIDC
+              if: inputs.destination == 'both' || inputs.destination == 'npm'
+              env:
+                  RELEASE_DIR: ${{ runner.temp }}/interaction-trace-release
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SOURCE_SHA: ${{ steps.source.outputs.sha }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+                  RELEASE_TAG: ${{ inputs.dist_tag }}
+                  # Read the internal mirror in cross-registry preflight; never sent to npmjs.
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: node .github/scripts/release.mjs publish "$RELEASE_DIR" "$SOURCE_SHA" "$RELEASE_VERSION" npm "$RELEASE_TAG"
+            - name: Publish or verify GitHub copy (preserve internal visibility)
+              if: inputs.destination == 'both' || inputs.destination == 'github'
+              env:
+                  RELEASE_DIR: ${{ runner.temp }}/interaction-trace-release
+                  SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SOURCE_SHA: ${{ steps.source.outputs.sha }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  RELEASE_TAG: ${{ inputs.dist_tag }}
+              run: node .github/scripts/release.mjs publish "$RELEASE_DIR" "$SOURCE_SHA" "$RELEASE_VERSION" github "$RELEASE_TAG"
