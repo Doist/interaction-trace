@@ -130,3 +130,60 @@ test('uses the original successful attempt even when the latest run failed', () 
     assert.throws(() => verifySourceRun('777', '1.1.4', '2', readApi))
     assert.throws(() => verifySourceRun('777', '1.1.4', '../1', readApi))
 })
+
+test('existing-release tooling binds distinct reviewed workflow and immutable tag commits', () => {
+    const workflowSha = 'b'.repeat(40)
+    const recovery = {
+        ...run,
+        path: '.github/workflows/pack-existing-release.yml',
+        head_branch: 'main',
+        head_sha: workflowSha,
+    }
+    const seen = []
+    const source = validateSourceRun(recovery, 123, '1.1.4', sha, (base, head) => {
+        seen.push([base, head])
+        return { status: 'ahead' }
+    })
+    assert.deepEqual(source, { sha, ref: 'refs/tags/interaction-trace-v1.1.4' })
+    assert.deepEqual(seen, [
+        [sha, 'main'],
+        [workflowSha, 'main'],
+    ])
+    assert.throws(() =>
+        validateSourceRun({ ...recovery, head_branch: 'feature' }, 123, '1.1.4', sha, reviewed),
+    )
+    for (const unreviewed of [sha, workflowSha]) {
+        assert.throws(() =>
+            validateSourceRun(recovery, 123, '1.1.4', sha, (base) => ({
+                status: base === unreviewed ? 'diverged' : 'ahead',
+            })),
+        )
+    }
+})
+
+test('existing-release artifact records bind the workflow SHA separately from the tag SHA', () => {
+    const workflowSha = 'b'.repeat(40)
+    const release = {
+        version: '1.1.4',
+        sourceSha: sha,
+        sourceWorkflowSha: workflowSha,
+        sourceWorkflowPath: '.github/workflows/pack-existing-release.yml',
+    }
+    const artifact = {
+        id: 456,
+        name: 'interaction-trace-1.1.4',
+        digest: `sha256:${'c'.repeat(64)}`,
+        workflow_run: { id: 123, head_sha: workflowSha },
+    }
+    validateArtifactRecord(artifact, '123', release)
+    assert.throws(() =>
+        validateArtifactRecord(
+            { ...artifact, workflow_run: { id: 123, head_sha: sha } },
+            '123',
+            release,
+        ),
+    )
+    assert.throws(() =>
+        validateArtifactRecord(artifact, '123', { ...release, sourceWorkflowSha: undefined }),
+    )
+})

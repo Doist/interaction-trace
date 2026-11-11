@@ -54,7 +54,10 @@ jobs:
             - uses: actions/setup-node@v6
               with:
                   node-version-file: .node-version
-            - run: npm install --global npm@11.21.2 --ignore-scripts
+            - name: Install isolated npm CLI
+              run: |
+                  npm install --prefix "$RUNNER_TEMP/npm-cli" --ignore-scripts --no-audit --no-fund npm@11.21.2
+                  echo "$RUNNER_TEMP/npm-cli/node_modules/.bin" >> "$GITHUB_PATH"
             - name: Validate source run, exact tag commit and reviewed ancestry
               id: source
               run: node .github/scripts/release-source.mjs run

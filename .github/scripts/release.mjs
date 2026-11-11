@@ -131,6 +131,12 @@ export function pack(directory, sourceSha, sourceRef) {
         schemaVersion: 1,
         sourceRunId: process.env.GITHUB_RUN_ID ?? null,
         sourceRunAttempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
+        ...(process.env.SOURCE_WORKFLOW_PATH
+            ? {
+                  sourceWorkflowPath: process.env.SOURCE_WORKFLOW_PATH,
+                  sourceWorkflowSha: process.env.GITHUB_SHA,
+              }
+            : {}),
         name: pkg.name,
         version: pkg.version,
         sourceSha,
