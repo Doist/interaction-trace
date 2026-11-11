@@ -8,10 +8,11 @@ and npm visibility. Preserve the existing transferred GitHub package and its ACL
 The package has no runtime dependencies; its optional React peer remains
 `^18.0.0 || ^19.0.0`, including the `/react` entry point.
 
-Preparation is **WAITING_FOR_PUBLICATION**: `@todoist/tsconfig@2.0.2` must exist in
-both registries before this draft can merge. The committed lockfile intentionally
-retains its old, real registry resolution; no alias or invented integrity is a
-substitute. After the tooling release, finalize in this same branch:
+The tooling gate is cleared: `@todoist/tsconfig@2.0.2` was verified in both
+registries on 2026-11-11 with identical SHA-512 integrity. The committed lockfile
+now contains its real npmjs resolution, generated with npm 11.21.2. Fresh
+registry-backed install, checks, tests and build pass. For a future dependency
+refresh, use the same validation sequence:
 
 ```sh
 npm view @todoist/tsconfig@2.0.2 version dist --json --registry=https://registry.npmjs.org/
@@ -25,8 +26,16 @@ node --test .github/scripts/*.test.mjs
 
 Use `.node-version` (22.22.2) and a fresh dependency directory/cache. Verify the
 upstream GitHub copy/access separately. The tooling producer's later formatter
-consumer PR is not a prerequisite. Review and commit the actual generated lock;
-rerun checks and update the existing draft before human merge.
+consumer PR is not a prerequisite. Review the actual generated lock before merge.
+
+The GitHub owner is now `todoist`, but the existing internal package remains
+readable as `@doist/interaction-trace`. On 2026-11-11 the new registry name
+`@todoist/interaction-trace` and its direct GitHub package API both returned 404,
+even though the organization inventory lists the old internal package. Do not
+interpret that inconsistent namespace state as proof that the new identity is
+safely initialized. The publisher intentionally blocks both destinations until
+new-name existence/access and internal visibility are resolved by an administrator.
+The `package-release` environment was still absent at this check.
 
 Release-please remains the release policy. Explicit component `interaction-trace`
 preserves `interaction-trace-v<version>` tags across the scope change. Source and
