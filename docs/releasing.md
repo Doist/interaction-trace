@@ -275,3 +275,20 @@ Select the original successful attempt using `source_run_attempt` in `publish.ym
 fields use attempt 1. The publisher reads `actions/runs/ID/attempts/N`, so a later
 failed or skipped rerun cannot hide the successful source. Keep the original ZIP
 and live artifact digest; never rebuild an already published version.
+
+### Runner tooling failure before the first artifact
+
+The original 1.1.4 run `43019088009` failed during a global npm self-upgrade
+(`Cannot find module 'promise-retry'`) before packing or uploading anything.
+The pack and publish workflows now install npm in a separate runner directory.
+Keep the existing `interaction-trace-v1.1.4` tag and release unchanged.
+
+If a normal release's pack failed before creating any retained artifact, use
+`gh workflow run pack-existing-release.yml --repo todoist/interaction-trace --ref main -f version=1.1.4`.
+This pack-only workflow validates the existing stable release, checks out its
+exact tag commit, and runs the checks/build there. Its metadata records both the
+reviewed workflow commit and the original release source commit. Publication
+validates both commits on main history and binds the original attempt/archive.
+Use the resulting original run for the normal explicit publication workflow.
+Never use this path to replace an existing retained or published artifact; use
+that original artifact for mirror retries.
