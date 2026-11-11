@@ -48,14 +48,30 @@ function releaseCommit(version) {
     return api(`commits/${tag}`).sha
 }
 
-export function verifySourceRun(runId, version) {
+export function verifySourceRun(
+    runId,
+    version,
+    attempt = process.env.SOURCE_RUN_ATTEMPT ?? '1',
+    readApi = api,
+) {
     assert.match(runId, /^[1-9][0-9]*$/)
     assert.match(version, /^\d+\.\d+\.\d+$/)
-    const run = api(`actions/runs/${runId}`)
+    assert.match(attempt, /^[1-9][0-9]*$/)
+    const run = readApi(`actions/runs/${runId}/attempts/${attempt}`)
     assert.equal(String(run.id), runId)
-    const workflow = api('actions/workflows/pack.yml')
-    return validateSourceRun(run, workflow.id, version, releaseCommit(version), (base, head) =>
-        api(`compare/${base}...${head}`),
+    assert.equal(String(run.run_attempt), attempt)
+    const workflow = readApi('actions/workflows/pack.yml')
+    const tag = tagName(version)
+    const record = readApi(`releases/tags/${tag}`)
+    assert.equal(record.tag_name, tag)
+    assert.equal(record.draft, false)
+    assert.equal(record.prerelease, false)
+    return validateSourceRun(
+        run,
+        workflow.id,
+        version,
+        readApi(`commits/${tag}`).sha,
+        (base, head) => readApi(`compare/${base}...${head}`),
     )
 }
 
@@ -95,7 +111,14 @@ export function verifyArtifactArchive(bytes, digest, directory, filename) {
 }
 
 export function verifyRetainedArtifact(runId, release, directory) {
-    const source = verifySourceRun(runId, release.version)
+    const attempt = process.env.SOURCE_RUN_ATTEMPT ?? String(release.sourceRunAttempt ?? 1)
+    assert.equal(
+        String(release.sourceRunAttempt ?? 1),
+        attempt,
+        'Select the original artifact attempt',
+    )
+    if (release.sourceRunId) assert.equal(release.sourceRunId, runId)
+    const source = verifySourceRun(runId, release.version, attempt)
     assert.equal(release.sourceSha, source.sha)
     assert.equal(release.sourceRef, source.ref)
     const listing = api(`actions/runs/${runId}/artifacts?per_page=100`)

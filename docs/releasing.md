@@ -266,3 +266,12 @@ References: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
 [npm trust prerequisites](https://docs.npmjs.com/cli/v11/commands/npm-trust/),
 [GitHub npm authentication](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry),
 [GitHub package permissions](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility).
+
+### Original run attempt
+
+Select the original successful attempt using `source_run_attempt` in `publish.yml`
+(or `SOURCE_RUN_ATTEMPT` for local commands). New `release.json` files record
+`sourceRunId` and `sourceRunAttempt`; existing schema 1 artifacts without these
+fields use attempt 1. The publisher reads `actions/runs/ID/attempts/N`, so a later
+failed or skipped rerun cannot hide the successful source. Keep the original ZIP
+and live artifact digest; never rebuild an already published version.

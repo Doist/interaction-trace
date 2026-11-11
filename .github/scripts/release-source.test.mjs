@@ -9,6 +9,7 @@ import {
     validateArtifactRecord,
     validateSourceRun,
     verifyArtifactArchive,
+    verifySourceRun,
 } from './release-source.mjs'
 
 const sha = 'a'.repeat(40)
@@ -108,4 +109,24 @@ test('local tarballs must equal the selected immutable run artifact, not self-de
     } finally {
         rmSync(directory, { recursive: true, force: true })
     }
+})
+
+// A failed rerun must not replace the historical success used by the retained artifact.
+test('uses the original successful attempt even when the latest run failed', () => {
+    const readApi = (path) => {
+        if (path === 'actions/runs/777')
+            return { ...run, id: 777, run_attempt: 2, conclusion: 'failure' }
+        if (path === 'actions/runs/777/attempts/1') return { ...run, id: 777, run_attempt: 1 }
+        if (path === 'actions/runs/777/attempts/2')
+            return { ...run, id: 777, run_attempt: 2, conclusion: 'failure' }
+        if (path === 'actions/workflows/pack.yml') return { id: 123 }
+        if (path === 'releases/tags/interaction-trace-v1.1.4')
+            return { tag_name: 'interaction-trace-v1.1.4', draft: false, prerelease: false }
+        if (path === 'commits/interaction-trace-v1.1.4') return { sha }
+        if (path === `compare/${sha}...main`) return { status: 'ahead' }
+        throw new Error(`Unexpected API read: ${path}`)
+    }
+    assert.equal(verifySourceRun('777', '1.1.4', '1', readApi).sha, sha)
+    assert.throws(() => verifySourceRun('777', '1.1.4', '2', readApi))
+    assert.throws(() => verifySourceRun('777', '1.1.4', '../1', readApi))
 })

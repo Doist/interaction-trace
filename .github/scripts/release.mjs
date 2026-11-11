@@ -129,6 +129,8 @@ export function pack(directory, sourceSha, sourceRef) {
     )
     const release = {
         schemaVersion: 1,
+        sourceRunId: process.env.GITHUB_RUN_ID ?? null,
+        sourceRunAttempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 1),
         name: pkg.name,
         version: pkg.version,
         sourceSha,

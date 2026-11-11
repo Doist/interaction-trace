@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.4](https://github.com/todoist/interaction-trace/compare/interaction-trace-v1.1.3...interaction-trace-v1.1.4) (2026-11-11)
+
+### Bug Fixes
+
+- prepare todoist scope and retained artifact publishing ([#246](https://github.com/todoist/interaction-trace/issues/246)) ([8aac796](https://github.com/todoist/interaction-trace/commit/8aac7961c5611b9284ba44d6bc27816ac1624253))
+
 ## [1.1.3](https://github.com/Doist/interaction-trace/compare/interaction-trace-v1.1.2...interaction-trace-v1.1.3) (2026-09-30)
 
 ### Bug Fixes
