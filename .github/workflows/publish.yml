@@ -10,7 +10,7 @@ on:
             source_run_attempt:
                 description: Original successful pack attempt recorded in release.json
                 required: true
-                default: '1'
+                default: "1"
                 type: string
             version:
                 description: Exact stable version in the retained artifact (intended migration release 1.1.4)
